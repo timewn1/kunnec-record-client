@@ -19,7 +19,7 @@ button {
     background-color: var(--grey-dim);
     height: 100vh;
     width: 100vw;
-    z-index: 1;
+    z-index: 4;
   }
 
   .modal-content {
@@ -30,7 +30,7 @@ button {
     position: fixed;
     top: 0px;
     opacity: 1;
-    z-index: 2;
+    z-index: 5;
 
     .modal-body {
       height: calc(100vh - 4em);

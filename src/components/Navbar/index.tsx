@@ -9,11 +9,12 @@ import {
     FaUserPlus,
     FaDesktop
 } from 'react-icons/fa';
-
 import {
     BsFillChatRightDotsFill,
     BsRecordCircle
 } from 'react-icons/bs'
+
+import h from '../../lib/helpers.js';
 
 import { IUser, IPc, IKunnec, IActive } from '../../type';
 
@@ -28,8 +29,7 @@ interface IProps {
     disconnect: disconnectFunction;
     onSetting: onSettingFunction;
     host: IUser;
-    partner: IPc[];
-    users: IKunnec[];
+    partner?: IPc;
 }
 
 const Navbar = (props: IProps) => {
@@ -55,6 +55,10 @@ const Navbar = (props: IProps) => {
             props.onToggle(key);
         }
         setActiveButton(active);
+    }
+
+    const screenSharing = () => {
+        h.screenSharing();
     }
 
     const inviteKunnec = (id: number, kunnecId: number, userId: number) => {
@@ -130,7 +134,7 @@ const Navbar = (props: IProps) => {
                         <span onClick={() => { changeActive('contact') }}>
                             <BsFillChatRightDotsFill />
                         </span>
-                        <span onClick={() => { changeActive('contact') }}>
+                        <span onClick={screenSharing} >
                             <FaDesktop />
                         </span>
                         <span onClick={() => { changeActive('audio') }}>{activeButton.audio ? <FaMicrophone /> : <FaMicrophoneSlash />}</span>
@@ -138,7 +142,7 @@ const Navbar = (props: IProps) => {
                         <span onClick={() => { changeActive('setting') }}>
                             <FaCog />
                         </span>
-                        <span className='' onClick={() => { changeActive('video') }}><BsRecordCircle /></span>
+                        <span ><BsRecordCircle /></span>
                         {/* <span className="active" onClick={() => window.location.href = '/public/k_spot/k_spot'}>
                             <FaPhone />
                         </span> */}
@@ -160,7 +164,7 @@ const Navbar = (props: IProps) => {
                             </div>
                         </div>
                         <hr />
-                        <p >Joined Carlo Spot: {props.partner.length}</p>
+                        {/* <p >Joined Carlo Spot: {props.partner.length}</p>
                         <div className="user-group">
                             {
                                 props.partner.map((ele, ind) => (
@@ -173,7 +177,7 @@ const Navbar = (props: IProps) => {
                                     </div>
                                 ))
                             }
-                        </div>
+                        </div> */}
                     </div>
                     <div className="modal-footer">
                         <button onClick={() => { changeActive('contact') }}>Close</button>
@@ -185,7 +189,7 @@ const Navbar = (props: IProps) => {
                 <div className="modal-content">
                     <div className="modal-body">
                         <h1>Invite Kunnec</h1>
-                        <div className="user-group">
+                        {/* <div className="user-group">
                             {
                                 props.users.map((ele: any, ind: number) => (
                                     <div className="user-panel" key={ind}>
@@ -197,7 +201,7 @@ const Navbar = (props: IProps) => {
                                     </div>
                                 ))
                             }
-                        </div>
+                        </div> */}
                     </div>
                     <div className="modal-footer">
                         <button onClick={() => { changeActive('invite') }}>Close</button>

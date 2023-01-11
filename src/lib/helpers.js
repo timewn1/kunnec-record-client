@@ -46,87 +46,135 @@ export default {
         }
     },
 
-    setLocalStream(stream, id) {
-        const localVidElem = document.getElementById(`videoElement-${id}`);
-        if (localVidElem) {
-            localVidElem.srcObject = stream;
+    setLocalStream(stream) {
+        const mainVideoEle = document.getElementById('host');
+
+        if (mainVideoEle) {
+            mainVideoEle.srcObject = stream;
         }
     },
 
-    adjustVideoSize(className, width, height, count) {
+    screenSharing() {
+        if (window.adapter.browserDetails.browser === 'firefox') {
+            window.adapter.browserShim.shimGetDisplayMedia(window, 'screen');
+        }
+
+        const options = { audio: true, video: true };
+        navigator.mediaDevices.getDisplayMedia(options)
+            .then((stream) => {
+                const video = document.getElementById('host');
+                video.srcObject = stream;
+
+                stream.getVideoTracks()[0].addEventListener('ended', () => {
+                    console.log('The user has ended sharing the screen');
+
+                });
+            }).catch(err => console.error(err));
+    },
+
+    adjustVideoSize(className, width, height, count, panel) {
         const min_separate = 10;
         const elements = document.getElementsByClassName(className);
+        const guestElement = document.getElementById('video-guest');
+        const hostElement = document.getElementById('video-host');
+        const mainElement = document.getElementById('video-main');
+
+        console.log('panel = ', panel);
 
         if (count === 1) {
-            elements[0].style.width = width + 'px';
-            elements[0].style.height = height + 'px';
-            elements[0].style.top = '0px';
-            elements[0].style.left = '0px';
-            elements[0].style.overflow = 'visible';
+            hostElement.style.width = width + 'px';
+            hostElement.style.height = height + 'px';
+            hostElement.style.top = '0px';
+            hostElement.style.left = '0px';
+            hostElement.style.overflow = 'visible';
+            hostElement.childNodes[1].childNodes[0].classList.remove('dragable');
             return;
         }
-        elements[count - 1].style.overflow = 'hidden';
 
-        let rest_space_min = width * height,
-            suitable_widthcount = 0,
-            suitable_heightcount = 0;
+        if (panel === 1) {
+            guestElement.style.width = width + 'px';
+            guestElement.style.height = height + 'px';
+            guestElement.style.top = '0px';
+            guestElement.style.left = '0px';
+            guestElement.style.overflow = 'visible';
+            hostElement.childNodes[1].childNodes[0].classList.remove('dragable');
 
-        for (let i = 1; i <= count; i++) {
-            let widthcount, heightcount = i;
-            if (count % i == 0) {
-                widthcount = parseInt(count / i);
-            } else {
-                widthcount = parseInt(count / i) + 1;
-            }
-
-            let cell_width = width / widthcount;
-            let cell_height = height / heightcount;
-            let width_height = cell_width > cell_height ? cell_height : cell_width;
-            let rest_space = width * height - count * width_height * width_height;
-
-            if (rest_space < rest_space_min) {
-                rest_space_min = rest_space;
-                suitable_heightcount = heightcount;
-                suitable_widthcount = widthcount;
-            }
+            hostElement.style.width = width / 6 + 'px';
+            hostElement.style.height = width / 6 * 5 / 8 + 'px';
+            hostElement.style.top = height - height / 20 - width / 6 * 5 / 8 + 'px';
+            hostElement.style.left = width - 30 - width / 6 + 'px';
+            hostElement.childNodes[1].childNodes[0].classList.add('dragable');
+            hostElement.style.overflow = 'hidden';
         }
 
-        let realTotalWidth = width - min_separate * (suitable_widthcount + 1),
-            realTotalHeight = height - min_separate * (suitable_heightcount + 1),
-            diffWidth = 0,
-            diffHeight = 0,
-            realWidth = realTotalWidth / suitable_widthcount,
-            realHeight = realTotalHeight / suitable_heightcount;
+        if (panel === 0) {
+            hostElement.style.overflow = 'hidden';
+            guestElement.style.overflow = 'hidden';
 
-        if (realWidth > realHeight * 8 / 5) {
-            diffWidth = realWidth * suitable_widthcount - realHeight * suitable_widthcount * 8 / 5;
-            realWidth = realHeight * 8 / 5;
-        }
-        else if (realHeight > realWidth * 5 / 8) {
-            diffHeight = realHeight * suitable_heightcount - realWidth * suitable_heightcount * 5 / 8;
-            realHeight = realWidth * 5 / 8;
-        }
+            let rest_space_min = width * height,
+                suitable_widthcount = 0,
+                suitable_heightcount = 0;
 
-        for (let i = 0; i < suitable_heightcount; i++) {
-            for (let j = 0; j < suitable_widthcount; j++) {
-                const index = suitable_widthcount * i + j;
-                if (index >= count) {
-                    return;
+            for (let i = 1; i <= count; i++) {
+                let widthcount, heightcount = i;
+                if (count % i == 0) {
+                    widthcount = parseInt(count / i);
+                } else {
+                    widthcount = parseInt(count / i) + 1;
                 }
 
-                let top = (i + 1) * min_separate + diffHeight / 2 + realHeight * i;
-                let left = (j + 1) * min_separate + diffWidth / 2 + realWidth * j;
-                if (i === (suitable_heightcount - 1) && suitable_heightcount * suitable_widthcount > count) {
-                    left = left + (suitable_heightcount * suitable_widthcount - count) * (realWidth + min_separate) / 2;
-                }
+                let cell_width = width / widthcount;
+                let cell_height = height / heightcount;
+                let width_height = cell_width > cell_height ? cell_height : cell_width;
+                let rest_space = width * height - count * width_height * width_height;
 
-                elements[index].style.width = realWidth + 'px';
-                elements[index].style.height = realHeight + 'px';
-                elements[index].style.top = top + 'px';
-                elements[index].style.left = left + 'px';
+                if (rest_space < rest_space_min) {
+                    rest_space_min = rest_space;
+                    suitable_heightcount = heightcount;
+                    suitable_widthcount = widthcount;
+                }
+            }
+
+            let realTotalWidth = width - min_separate * (suitable_widthcount + 1),
+                realTotalHeight = height - min_separate * (suitable_heightcount + 1),
+                diffWidth = 0,
+                diffHeight = 0,
+                realWidth = realTotalWidth / suitable_widthcount,
+                realHeight = realTotalHeight / suitable_heightcount;
+
+            if (realWidth > realHeight * 8 / 5) {
+                diffWidth = realWidth * suitable_widthcount - realHeight * suitable_widthcount * 8 / 5;
+                realWidth = realHeight * 8 / 5;
+            }
+            else if (realHeight > realWidth * 5 / 8) {
+                diffHeight = realHeight * suitable_heightcount - realWidth * suitable_heightcount * 5 / 8;
+                realHeight = realWidth * 5 / 8;
+            }
+
+            for (let i = 0; i < suitable_heightcount; i++) {
+                for (let j = 0; j < suitable_widthcount; j++) {
+                    const index = suitable_widthcount * i + j;
+                    if (index >= count) {
+                        return;
+                    }
+
+                    let top = (i + 1) * min_separate + diffHeight / 2 + realHeight * i;
+                    let left = (j + 1) * min_separate + diffWidth / 2 + realWidth * j;
+                    if (i === (suitable_heightcount - 1) && suitable_heightcount * suitable_widthcount > count) {
+                        left = left + (suitable_heightcount * suitable_widthcount - count) * (realWidth + min_separate) / 2;
+                    }
+
+                    elements[index].style.width = realWidth + 'px';
+                    elements[index].style.height = realHeight + 'px';
+                    elements[index].style.top = top + 'px';
+                    elements[index].style.left = left + 'px';
+                    elements[index].childNodes[1].childNodes[0].classList.remove('dragable');
+                }
             }
         }
     }
+
+
 
     /**
      * @param {MediaProvider} str

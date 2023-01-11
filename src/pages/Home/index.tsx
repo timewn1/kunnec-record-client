@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
-// import { Store } from 'react-notifications-component';
+import { Store } from 'react-notifications-component';
 
 import { IPc, IKunnec, ISetting, IToggle } from '../../type/index.js';
 
@@ -11,7 +11,8 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-const ENDPOINT = "https://spot.kunnec.com/stream";
+// const ENDPOINT = "https://spot.kunnec.com/stream";
+const ENDPOINT = "http://localhost:3001/stream";
 
 const socket = socketIOClient(ENDPOINT);
 
@@ -32,7 +33,6 @@ const useWindowSize = () => {
 
 const Home = () => {
     const [sId, setSId] = useState('');
-    const [pc, setPc] = useState<IPc[]>([]);
     const [myStream, setMyStream] = useState<any>();
     const [users, setUsers] = useState<IKunnec[]>([]);
     const [myPc, setMyPc] = useState<IPc>(
@@ -46,6 +46,7 @@ const Home = () => {
             image: "",
         }
     );
+    const [guestPC, setGuestPC] = useState<IPc[]>([]);
     const [setting, setSetting] = useState<ISetting>({
         video: '',
         audioInput: ''
@@ -54,22 +55,22 @@ const Home = () => {
         audio: true,
         video: true
     });
+    const [panel, setPanel] = useState(0);
 
     const room = window.location.hash.split('#')[1];
     const [width, height] = useWindowSize();
 
     const setMedia = async (id: string) => {
         const _myStream = await h.getUserFullMedia(setting);
-        h.setLocalStream(_myStream, id);
+        h.setLocalStream(_myStream);
         setMyStream(_myStream);
         return _myStream;
     }
 
     const broadcastNewTracks = (stream: any, type: string) => {
         let track: any;
-        h.setLocalStream(stream);
 
-        if (pc.length > 0) {
+        if (guestPC.length > 0) {
             if (type === 'audio') {
                 track = stream.getAudioTracks()[0];
             } else {
@@ -91,11 +92,14 @@ const Home = () => {
         setToggle(_toggle);
 
         if (myStream) {
-            myStream.getAudioTracks()[0].enabled = _toggle.audio;
-            myStream.getVideoTracks()[0].enabled = _toggle.video;
-
-            broadcastNewTracks(myStream, 'audio');
-            broadcastNewTracks(myStream, 'video');
+            if (type === 'audio') {
+                myStream.getAudioTracks()[0].enabled = _toggle.audio;
+                broadcastNewTracks(myStream, 'audio');
+            }
+            else if (type === 'video') {
+                myStream.getVideoTracks()[0].enabled = _toggle.video;
+                broadcastNewTracks(myStream, 'video');
+            }
         }
     }
 
@@ -109,7 +113,7 @@ const Home = () => {
             stream.getVideoTracks()[0].enabled = toggle.video;
         }
 
-        h.setLocalStream(stream, sId);
+        h.setLocalStream(stream);
 
         broadcastNewTracks(stream, 'audio');
         broadcastNewTracks(stream, 'video');
@@ -159,12 +163,11 @@ const Home = () => {
 
     useEffect(() => {
         const navHeight = document.getElementsByTagName('nav')[0].offsetHeight;
-        // const footerHeight = document.getElementsByTagName('footer')[0].offsetHeight;
         const mainHeight = height - navHeight;
 
-        h.adjustVideoSize('video-ele', width, mainHeight, pc.length + 1);
+        h.adjustVideoSize('video-ele', width, mainHeight, guestPC.length + 1, panel);
 
-    }, [width, height, pc]);
+    }, [width, height, guestPC, panel]);
 
     useEffect(() => {
         try {
@@ -188,7 +191,8 @@ const Home = () => {
             });
 
             socket.on('room', async (data: any) => {
-                setPc([...pc, data.user]);
+                setGuestPC([data.user]);
+                setPanel(1);
 
                 await initNewUser(false, myId, data.socketId, (con) => window.socketPc[data.socketId] = con);
 
@@ -198,23 +202,24 @@ const Home = () => {
                     user: { ...myPc, clientId: myId },
                 });
 
-                // Store.addNotification({
-                //     title: "Info!",
-                //     message: `${data.user.first_name} ${data.user.last_name} joined the Room`,
-                //     type: "info",
-                //     insert: "top",
-                //     container: "top-right",
-                //     animationIn: ["animate__animated", "animate__fadeIn"],
-                //     animationOut: ["animate__animated", "animate__fadeOut"],
-                //     dismiss: {
-                //         duration: 5000,
-                //         onScreen: true
-                //     }
-                // });
+                Store.addNotification({
+                    title: "Info!",
+                    message: `${data.user.first_name} ${data.user.last_name} joined the Room`,
+                    type: "info",
+                    insert: "top",
+                    container: "top-right",
+                    animationIn: ["animate__animated", "animate__fadeIn"],
+                    animationOut: ["animate__animated", "animate__fadeOut"],
+                    dismiss: {
+                        duration: 5000,
+                        onScreen: true
+                    }
+                });
             });
 
             socket.on('newUserStart', async (data: any) => {
-                setPc([...pc, data.user]);
+                setGuestPC([data.user]);
+                setPanel(1);
                 initNewUser(true, myId, data.sender, (con) => window.socketPc[data.sender] = con);
             });
 
@@ -257,24 +262,21 @@ const Home = () => {
             })
 
             socket.on('disconnect room', (data: any) => {
-                const _data = pc.filter((ele: any) => ele.clientId !== data.clientId);
-                const deleted_user = pc.filter((ele: IPc) => ele.clientId === data.clientId);
-
                 delete window.socketPc[data.clientId];
+                setGuestPC([]);
 
-                // Store.addNotification({
-                //     message: `${deleted_user[0]?.first_name} ${deleted_user[0]?.last_name} left the Room`,
-                //     type: "danger",
-                //     insert: "top",
-                //     container: "top-right",
-                //     animationIn: ["animate__animated", "animate__fadeIn"],
-                //     animationOut: ["animate__animated", "animate__fadeOut"],
-                //     dismiss: {
-                //         duration: 7000,
-                //         onScreen: true
-                //     }
-                // });
-                setPc(_data);
+                Store.addNotification({
+                    message: `${guestPC[0]?.first_name} ${guestPC[0]?.last_name} left the Room`,
+                    type: "danger",
+                    insert: "top",
+                    container: "top-right",
+                    animationIn: ["animate__animated", "animate__fadeIn"],
+                    animationOut: ["animate__animated", "animate__fadeOut"],
+                    dismiss: {
+                        duration: 7000,
+                        onScreen: true
+                    }
+                });
             });
 
             const initNewUser = async (createOffer: boolean, id: string, partnerName: string, cb: Function) => {
@@ -295,7 +297,7 @@ const Home = () => {
 
                     //add track
                     con.ontrack = (e) => {
-                        const elem = document.getElementById(`videoElement-${partnerName}`) as any;
+                        const elem = document.getElementById('guest') as any;
                         if (e.streams && e.streams[0]) {
                             elem.srcObject = e.streams[0];
                         }
@@ -323,7 +325,7 @@ const Home = () => {
                             con.addTrack(track, stream); //should trigger negotiationneeded event
                         });
 
-                        h.setLocalStream(stream, id);
+                        h.setLocalStream(stream);
                         setMyStream(stream);
 
                         //create offer
@@ -358,18 +360,25 @@ const Home = () => {
             socket.off('room');
             socket.off('disconnect room');
         };
-    }, [myPc, pc]);
+    }, [myPc, guestPC]);
+
+    const switchToggle = (index: boolean) => {
+        setPanel(Number(index));
+    }
 
     return (
         <>
-            <Navbar  {...{ host: myPc, partner: pc, users: users }} onToggle={(key: string) => toggleAction(key)} disconnect={(id: string) => { disConnect(id) }} onSetting={(index: number, type: string) => { changeSetting(index, type) }} />
+            <Navbar  {...{ host: myPc, partner: guestPC[0] }} onToggle={(key: string) => toggleAction(key)} disconnect={(id: string) => { disConnect(id) }} onSetting={(index: number, type: string) => { changeSetting(index, type) }} />
             <main className='home'>
                 <div className="main">
                     <div className='main-board'>
-                        {pc.map((ele) => (
-                            <Video key={ele.clientId} {...{ name: ele.first_name, partnerName: ele.clientId, host: false }} />
-                        ))}
-                        <Video {...{ name: myPc.first_name, partnerName: sId, host: true }} />
+                        {/* <Video {...{ name: '', type: 'main', }} /> */}
+                        {
+                            guestPC.length > 0 ?
+                                <Video {...{ name: guestPC[0].first_name, type: 'guest' }} />
+                                : <></>
+                        }
+                        <Video {...{ name: 'You', type: 'host', }} onSwitchToggle={(index: boolean) => switchToggle(index)} />
                     </div>
                 </div>
             </main>
