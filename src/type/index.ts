@@ -30,5 +30,13 @@ export interface IActive {
     setting: boolean,
     audio: boolean,
     video: boolean,
-    invite: boolean
+    chat: boolean
+}
+
+export interface IMessage {
+    time: Date,
+    isFile: boolean,
+    content: string,
+    user_id: string,
+    uploadedName?: string,
 }

@@ -60,6 +60,9 @@ const Home = () => {
     const room = window.location.hash.split('#')[1];
     const [width, height] = useWindowSize();
 
+    let receiveChannel = null;
+    let sendChannel = null;
+
     const setMedia = async (id: string) => {
         const _myStream = await h.getUserFullMedia(setting);
         h.setLocalStream(_myStream);
@@ -181,12 +184,12 @@ const Home = () => {
 
                 setMedia(myId);
                 setSId(myId);
-                setMyPc(_myPc);
+                setMyPc({ ..._myPc, clientId: myId });
 
                 socket.emit('subscribe', {
                     room: room,
                     socketId: myId,
-                    userData: _myPc,
+                    userData: { ..._myPc, clientId: myId },
                 });
             });
 
@@ -368,7 +371,7 @@ const Home = () => {
 
     return (
         <>
-            <Navbar  {...{ host: myPc, partner: guestPC[0] }} onToggle={(key: string) => toggleAction(key)} disconnect={(id: string) => { disConnect(id) }} onSetting={(index: number, type: string) => { changeSetting(index, type) }} />
+            <Navbar  {...{ host: myPc, partner: guestPC[0], socket: socket }} onToggle={(key: string) => toggleAction(key)} disconnect={(id: string) => { disConnect(id) }} onSetting={(index: number, type: string) => { changeSetting(index, type) }} />
             <main className='home'>
                 <div className="main">
                     <div className='main-board'>

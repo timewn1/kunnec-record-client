@@ -54,22 +54,28 @@ export default {
         }
     },
 
-    screenSharing() {
-        if (window.adapter.browserDetails.browser === 'firefox') {
-            window.adapter.browserShim.shimGetDisplayMedia(window, 'screen');
-        }
+    async screenSharing() {
+        try {
+            const video = document.getElementById('main');
+            const options = { audio: false, video: true };
 
-        const options = { audio: true, video: true };
-        navigator.mediaDevices.getDisplayMedia(options)
-            .then((stream) => {
-                const video = document.getElementById('host');
+            if (window.adapter.browserDetails.browser === 'firefox') {
+                window.adapter.browserShim.shimGetDisplayMedia(window, 'screen');
+            }
+
+            const screenStream = await navigator.mediaDevices.getDisplayMedia(options);
+
+            screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+                console.log('The user has ended sharing the screen');
+            });
+            if (video)
                 video.srcObject = stream;
 
-                stream.getVideoTracks()[0].addEventListener('ended', () => {
-                    console.log('The user has ended sharing the screen');
-
-                });
-            }).catch(err => console.error(err));
+            return screenStream;
+        }
+        catch {
+            err => console.error(err);
+        }
     },
 
     adjustVideoSize(className, width, height, count, panel) {
@@ -78,8 +84,6 @@ export default {
         const guestElement = document.getElementById('video-guest');
         const hostElement = document.getElementById('video-host');
         const mainElement = document.getElementById('video-main');
-
-        console.log('panel = ', panel);
 
         if (count === 1) {
             hostElement.style.width = width + 'px';
