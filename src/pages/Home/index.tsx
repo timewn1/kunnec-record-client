@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Store } from 'react-notifications-component';
 
-import { IPc, IKunnec, ISetting, IToggle } from '../../type/index.js';
+import { IPc, ISetting, IToggle } from '../../type/index.js';
 
 import h from '../../lib/helpers.js';
 
@@ -11,7 +11,7 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-// const ENDPOINT = "https://spot.kunnec.com/stream";
+// const ENDPOINT = "https://record.kunnec.com/stream";
 const ENDPOINT = "http://localhost:3001/stream";
 
 const socket = socketIOClient(ENDPOINT);
@@ -34,7 +34,6 @@ const useWindowSize = () => {
 const Home = () => {
     const [sId, setSId] = useState('');
     const [myStream, setMyStream] = useState<any>();
-    const [users, setUsers] = useState<IKunnec[]>([]);
     const [myPc, setMyPc] = useState<IPc>(
         {
             clientId: '',
@@ -59,9 +58,6 @@ const Home = () => {
 
     const room = window.location.hash.split('#')[1];
     const [width, height] = useWindowSize();
-
-    let receiveChannel = null;
-    let sendChannel = null;
 
     const setMedia = async (id: string) => {
         const _myStream = await h.getUserFullMedia(setting);
@@ -131,36 +127,34 @@ const Home = () => {
     }
 
     const getUserAuth = async () => {
-        // const res = await fetch('https://kunnec.com/api/get-info');
-        // const json = await res.json();
-        // const auth = json.authorization;
-        // const _users = json.users;
+        const res = await fetch('https://kunnec.com/api/get-info');
+        const json = await res.json();
+        const auth = json.authorization;
 
-        // if (auth === 'fail') {
-        //     window.location.href = '/public/login';
-        // }
-
-        // const u = {
-        //     clientId: sId,
-        //     id: auth['id'],
-        //     first_name: auth['first_name'],
-        //     last_name: auth['last_name'],
-        //     username: auth['username'],
-        //     gender: auth['gender'],
-        //     image: auth['image'],
-        // }
-
-        const u = {
-            clientId: 'clientId',
-            id: 0,
-            first_name: 'Calor',
-            last_name: 'Brown',
-            username: 'Calor',
-            gender: 0,
-            image: 'image/user.jpg',
+        if (auth === 'fail') {
+            window.location.href = '/public/login';
         }
 
-        // setUsers(_users);
+        const u = {
+            clientId: sId,
+            id: auth['id'],
+            first_name: auth['first_name'],
+            last_name: auth['last_name'],
+            username: auth['username'],
+            gender: auth['gender'],
+            image: auth['image'],
+        }
+
+        // const u = {
+        //     clientId: 'clientId',
+        //     id: 0,
+        //     first_name: 'Calor',
+        //     last_name: 'Brown',
+        //     username: 'Calor',
+        //     gender: 0,
+        //     image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
+        // }
+
         return u;
     }
 
@@ -214,7 +208,7 @@ const Home = () => {
                     animationIn: ["animate__animated", "animate__fadeIn"],
                     animationOut: ["animate__animated", "animate__fadeOut"],
                     dismiss: {
-                        duration: 5000,
+                        duration: 2000,
                         onScreen: true
                     }
                 });
@@ -276,7 +270,7 @@ const Home = () => {
                     animationIn: ["animate__animated", "animate__fadeIn"],
                     animationOut: ["animate__animated", "animate__fadeOut"],
                     dismiss: {
-                        duration: 7000,
+                        duration: 2000,
                         onScreen: true
                     }
                 });

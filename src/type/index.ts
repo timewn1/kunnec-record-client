@@ -26,7 +26,7 @@ export interface IToggle {
 }
 
 export interface IActive {
-    contact: boolean,
+    exit: boolean,
     setting: boolean,
     audio: boolean,
     video: boolean,
@@ -38,5 +38,6 @@ export interface IMessage {
     isFile: boolean,
     content: string,
     user_id: string,
+    userName: string,
     uploadedName?: string,
 }

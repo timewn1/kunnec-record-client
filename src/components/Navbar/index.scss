@@ -120,24 +120,15 @@ nav {
 
         img {
             height: 2em;
-            width: auto;
+            aspect-ratio: 1/1;
             margin-right: .4em;
             border-radius: 50%;
-
         }
 
         .spot-name {
             display: block;
             width: 200px;
             font-size: 1.1em;
-
-            &:hover {
-                overflow: visible;
-            }
-        }
-
-        &:hover {
-            border: 1px solid var(--primary);
         }
     }
 }

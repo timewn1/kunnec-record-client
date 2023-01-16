@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { Store } from 'react-notifications-component';
 import {
     FaCog,
     FaVideo,
@@ -9,7 +10,7 @@ import {
 } from 'react-icons/fa';
 import {
     BsXLg,
-    BsRecordCircle,
+    // BsRecordCircle,
     BsFillChatRightDotsFill,
     BsFillFileEarmarkCheckFill
 } from 'react-icons/bs';
@@ -24,6 +25,7 @@ import { IPc, IActive, IMessage } from '../../type';
 import { ChatElement } from '../ChatElement';
 
 import './index.scss';
+
 
 type toggleFunction = (type: string) => void;
 type onSettingFunction = (index: number, type: string) => void;
@@ -40,13 +42,14 @@ interface IProps {
 
 const Navbar = (props: IProps) => {
     const [chatText, setChatText] = useState<string>('');
+    const [time, setTime] = useState(0);
     const [fileName, setFileName] = useState<string>('');
     const [chatList, setChatList] = useState<IMessage[]>([]);
     const [videoList, setVideoList] = useState<any[]>([]);
     const [inputAudioList, setInputAudioList] = useState<any[]>([]);
     const [activeButton, setActiveButton] = useState<IActive>(
         {
-            contact: false,
+            exit: false,
             setting: false,
             chat: false,
             audio: true,
@@ -108,7 +111,7 @@ const Navbar = (props: IProps) => {
         setChatText(text)
     }
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
         if (fileName !== '') {
             if (fileRef.current && fileRef.current.files) {
                 const uploadedName = new Date().valueOf().toString();
@@ -118,23 +121,47 @@ const Navbar = (props: IProps) => {
                     isFile: true,
                     content: fileName,
                     user_id: props.host.clientId,
+                    userName: props.host.username,
                     uploadedName: uploadedName,
                 }
 
                 if (props.partner?.clientId) {
-                    props.socket.emit("upload", {
-                        file: fileRef.current.files[0],
-                        uploadName: uploadedName,
-                    }, (status) => {
-                        console.log(status);
+                    let formData = new FormData();
+
+                    formData.append('name', uploadedName);
+                    formData.append('file', fileRef.current.files[0]);
+
+                    const res = await fetch('/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+
+                    const result = await res.json();
+                    // console.log('file upload = ', result);
+
+                    if (result.state) {
                         props.socket.emit('sendChat', {
                             content: data,
                             to: props.partner?.clientId
                         });
 
                         setChatList([...chatList, data]);
-                        removeFile();
-                    });
+                    } else {
+                        Store.addNotification({
+                            title: "Failed!",
+                            message: `File transfer is failed`,
+                            type: "danger",
+                            insert: "top",
+                            container: "top-right",
+                            animationIn: ["animate__animated", "animate__fadeIn"],
+                            animationOut: ["animate__animated", "animate__fadeOut"],
+                            dismiss: {
+                                duration: 2000,
+                                onScreen: true
+                            }
+                        });
+                    }
+                    removeFile();
                 }
             }
         }
@@ -144,6 +171,7 @@ const Navbar = (props: IProps) => {
                     time: new Date(),
                     content: chatText,
                     user_id: props.host.clientId,
+                    userName: props.host.username,
                     isFile: false,
                 }
 
@@ -212,6 +240,14 @@ const Navbar = (props: IProps) => {
         //     chatRef.current?.removeEventListener('dragover', () => { });
         //     chatRef.current?.removeEventListener('dragleave', () => { });
         // }
+
+        const timeInterval = setInterval(() => {
+            setTime(prev => prev + 1);
+        }, 1000);
+
+        return () => {
+            clearInterval(timeInterval);
+        }
     }, []);
 
     useEffect(() => {
@@ -234,26 +270,26 @@ const Navbar = (props: IProps) => {
                 <div>
                     <div className="x-code">
                         <div>
-                            <img src={props.host.image} alt="user" />
+                            <img src={Utills.urlString(props.host.image)} alt="user" />
                             <span className='spot-name'>{props.host.username} session</span>
                         </div>
-                        <p>00:00:00</p>
+                        <p>{Utills.convertTrackingTime(time)}</p>
                     </div>
                     <div className="x-btn x-controller">
-                        <span onClick={() => { changeActive('contact') }}><BsFillChatRightDotsFill /></span>
+                        <span onClick={() => changeActive('chat')}><BsFillChatRightDotsFill /></span>
                         <span onClick={screenSharing} ><FaDesktop /></span>
-                        <span onClick={() => { changeActive('audio') }}>{activeButton.audio ? <FaMicrophone /> : <FaMicrophoneSlash />}</span>
-                        <span onClick={() => { changeActive('video') }}>{activeButton.video ? <FaVideo /> : <FaVideoSlash />}</span>
-                        <span onClick={() => { changeActive('setting') }}><FaCog /></span>
-                        <span onClick={recording}><BsRecordCircle /></span>
-                        <button className='active exit-btn'>Exit Session</button>
+                        <span onClick={() => changeActive('audio')}>{activeButton.audio ? <FaMicrophone /> : <FaMicrophoneSlash />}</span>
+                        <span onClick={() => changeActive('video')}>{activeButton.video ? <FaVideo /> : <FaVideoSlash />}</span>
+                        <span onClick={() => changeActive('setting')}><FaCog /></span>
+                        {/* <span onClick={recording}><BsRecordCircle /></span> */}
+                        <button className='active exit-btn' onClick={() => changeActive('exit')}>Exit Session</button>
                     </div>
                 </div>
             </nav>
-            <div className={`modal left ${activeButton.contact ? "show" : ''}`}>
+            <div className={`modal left ${activeButton.chat ? "show" : ''}`}>
                 <div className="modal-content">
                     <div className="modal-header">
-                        <span onClick={() => { changeActive('contact') }}><BsXLg /></span>
+                        <span onClick={() => { changeActive('chat') }}><BsXLg /></span>
                     </div>
                     <div className="modal-body">
                         <div>
@@ -282,28 +318,15 @@ const Navbar = (props: IProps) => {
                     </div>
                 </div>
             </div>
-            <div className={`modal top ${activeButton.chat ? "show" : ''}`}>
+            <div className={`modal center ${activeButton.exit ? "show" : ''}`}>
                 <div className="modal-content">
-                    <div className="modal-header">
-                        <button onClick={() => { changeActive('invite') }}>X</button>
+                    <div className="modal-footer">
+                        <h1>Do you want to exit this session?</h1>
+                        <div className='btn-group'>
+                            <button className='active' onClick={() => window.location.href = 'https://kunnec.com/public/k_screen/recording/record_details'}>Yes</button>
+                            <button onClick={() => changeActive('exit')}>No</button>
+                        </div>
                     </div>
-                    <div className="modal-body">
-                        <h1>Invite Kunnec</h1>
-                        {/* <div className="user-group">
-                            {
-                                props.users.map((ele: any, ind: number) => (
-                                    <div className="user-panel" key={ind}>
-                                        <div>
-                                            <img src={`https://kunnec.com/public/user-dash/images/users/profiles/${ele.image}`} alt="user" />
-                                            <p>{`${ele.first_name} ${ele.last_name}`}</p>
-                                        </div>
-                                        <button className='btn-invite' onClick={() => { inviteKunnec(ind, ele.id, ele.user_id) }} >invite</button>
-                                    </div>
-                                ))
-                            }
-                        </div> */}
-                    </div>
-
                 </div>
             </div>
             <div className={`modal right ${activeButton.setting ? "show" : ''}`}>

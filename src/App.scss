@@ -312,20 +312,58 @@ button {
     }
   }
 
-  &.top {
+  &.center {
     z-index: 100;
 
-    .overlay {
-      top: -100vh;
-      left: 0;
-      transition-property: opacity, top;
-      transition-duration: 0, 0.3s;
-    }
-
     .modal-content {
+      width: 400px;
+      max-width: 100vw;
+      height: 230px;
+      left: 50%;
       top: -100vh;
+      transform: translateX(-50%);
+      border-radius: 3px;
+      box-shadow: 0px 0px 6px #6ed16e;
       transition-property: opacity, top;
       transition-duration: 0.25s, 0.3s;
+
+      .modal-footer {
+        flex-direction: column;
+        justify-content: center;
+        height: 100%;
+
+        h1 {
+          font-size: 1.4em;
+
+          @media (max-width : 390px) {
+            font-size: 1.2em;
+          }
+        }
+
+        .btn-group {
+          text-align: right;
+
+          button {
+            background-color: white;
+            color: var(--green);
+            margin-left: 15px;
+
+            &:hover {
+              background-color: rgb(230, 230, 230);
+            }
+
+            &.active {
+              background-color: var(--green);
+              color: white;
+
+              &:hover {
+                background-color: #49d486;
+              }
+            }
+          }
+
+        }
+      }
 
       .user-group {
         overflow-y: auto;
@@ -335,9 +373,8 @@ button {
 
     &.show {
 
-      .modal-content,
-      .overlay {
-        top: 0;
+      .modal-content {
+        top: 5em;
         opacity: 1;
       }
     }

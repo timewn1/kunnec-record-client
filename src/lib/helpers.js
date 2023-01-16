@@ -69,12 +69,12 @@ export default {
                 console.log('The user has ended sharing the screen');
             });
             if (video)
-                video.srcObject = stream;
+                video.srcObject = screenStream;
 
             return screenStream;
         }
-        catch {
-            err => console.error(err);
+        catch (error) {
+            console.error(error);
         }
     },
 

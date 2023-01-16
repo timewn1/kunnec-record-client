@@ -7,16 +7,31 @@
 
     &.left {
         align-items: flex-start;
+
+        >div {
+            color: rgba(50, 150, 50, 0.9);
+            background-color: rgba(255, 255, 255, 0.8);
+        }
     }
 
     &.right {
         align-items: flex-end;
+
+        >div {
+            color: rgba(255, 255, 255, 0.9);
+            background-color: rgba(100, 160, 100, 0.8);
+        }
     }
 
     >p {
         color: rgba(255, 255, 255, 0.9);
-        margin-bottom: 0;
+        margin-bottom: 2px !important;
+        margin-top: 3px !important;
         font-size: 13px;
+
+        &.user-name {
+            // color: rgba(100, 160, 100, 0.9);
+        }
     }
 
     >div {
@@ -24,8 +39,6 @@
         text-align: right;
         display: flex;
         align-items: center;
-        background-color: rgba(100, 160, 100, 0.8);
-        color: rgba(255, 255, 255, 1);
         padding: 5px 10px;
         border-radius: 7px;
         word-wrap: break-word;
