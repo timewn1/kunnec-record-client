@@ -41,8 +41,8 @@ interface IProps {
 }
 
 const Navbar = (props: IProps) => {
+    const [time, setTime] = useState<number>(0);
     const [chatText, setChatText] = useState<string>('');
-    const [time, setTime] = useState(0);
     const [fileName, setFileName] = useState<string>('');
     const [chatList, setChatList] = useState<IMessage[]>([]);
     const [videoList, setVideoList] = useState<any[]>([]);
@@ -131,35 +131,42 @@ const Navbar = (props: IProps) => {
                     formData.append('name', uploadedName);
                     formData.append('file', fileRef.current.files[0]);
 
-                    const res = await fetch('/upload', {
-                        method: 'POST',
-                        body: formData
-                    })
+                    try {
+                        const res = await fetch('https://record.kunnec.com/upload', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        // const res = await fetch('http://localhost:3001/upload', {
+                        //     method: 'POST',
+                        //     body: formData
+                        // })
 
-                    const result = await res.json();
-                    // console.log('file upload = ', result);
+                        const result = await res.json();
 
-                    if (result.state) {
-                        props.socket.emit('sendChat', {
-                            content: data,
-                            to: props.partner?.clientId
-                        });
+                        if (result.state) {
+                            props.socket.emit('sendChat', {
+                                content: data,
+                                to: props.partner?.clientId
+                            });
 
-                        setChatList([...chatList, data]);
-                    } else {
-                        Store.addNotification({
-                            title: "Failed!",
-                            message: `File transfer is failed`,
-                            type: "danger",
-                            insert: "top",
-                            container: "top-right",
-                            animationIn: ["animate__animated", "animate__fadeIn"],
-                            animationOut: ["animate__animated", "animate__fadeOut"],
-                            dismiss: {
-                                duration: 2000,
-                                onScreen: true
-                            }
-                        });
+                            setChatList([...chatList, data]);
+                        } else {
+                            Store.addNotification({
+                                title: "Failed!",
+                                message: `File transfer is failed`,
+                                type: "danger",
+                                insert: "top",
+                                container: "top-right",
+                                animationIn: ["animate__animated", "animate__fadeIn"],
+                                animationOut: ["animate__animated", "animate__fadeOut"],
+                                dismiss: {
+                                    duration: 2000,
+                                    onScreen: true
+                                }
+                            });
+                        }
+                    } catch (err) {
+                        console.error(err);
                     }
                     removeFile();
                 }

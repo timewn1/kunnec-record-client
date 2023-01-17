@@ -11,8 +11,8 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-// const ENDPOINT = "https://record.kunnec.com/stream";
-const ENDPOINT = "http://localhost:3001/stream";
+const ENDPOINT = "https://record.kunnec.com/stream";
+// const ENDPOINT = "http://localhost:3001/stream";
 
 const socket = socketIOClient(ENDPOINT);
 
