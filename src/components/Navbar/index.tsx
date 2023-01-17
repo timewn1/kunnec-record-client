@@ -17,7 +17,6 @@ import {
 import { BiSend } from 'react-icons/bi';
 import { ImAttachment } from 'react-icons/im';
 
-import h from '../../lib/helpers.js';
 import Utills from '../../lib/utills.js';
 
 import { IPc, IActive, IMessage } from '../../type';
@@ -29,13 +28,13 @@ import './index.scss';
 
 type toggleFunction = (type: string) => void;
 type onSettingFunction = (index: number, type: string) => void;
-type disconnectFunction = (id: string) => void;
+type screenSharingFunction = () => void;
 
 interface IProps {
     onToggle: toggleFunction;
-    disconnect: disconnectFunction;
+    screenSharing: screenSharingFunction;
     onSetting: onSettingFunction;
-    host: IPc;
+    host: IPc | null;
     partner?: IPc;
     socket: any;
 }
@@ -72,13 +71,9 @@ const Navbar = (props: IProps) => {
         setActiveButton(active);
     }
 
-    const screenSharing = () => {
-        h.screenSharing();
-    }
+    // const recording = () => {
 
-    const recording = () => {
-
-    }
+    // }
 
     const getDevices = async () => {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -112,20 +107,20 @@ const Navbar = (props: IProps) => {
     }
 
     const sendMessage = async () => {
+        if (!props.host) return;
         if (fileName !== '') {
             if (fileRef.current && fileRef.current.files) {
-                const uploadedName = new Date().valueOf().toString();
-
-                const data = {
-                    time: new Date(),
-                    isFile: true,
-                    content: fileName,
-                    user_id: props.host.clientId,
-                    userName: props.host.username,
-                    uploadedName: uploadedName,
-                }
-
                 if (props.partner?.clientId) {
+                    const uploadedName = new Date().valueOf().toString();
+                    const data = {
+                        time: new Date(),
+                        isFile: true,
+                        content: fileName,
+                        user_id: props.host.clientId,
+                        userName: props.host.username,
+                        uploadedName: uploadedName,
+                    }
+
                     let formData = new FormData();
 
                     formData.append('name', uploadedName);
@@ -136,10 +131,6 @@ const Navbar = (props: IProps) => {
                             method: 'POST',
                             body: formData
                         })
-                        // const res = await fetch('http://localhost:3001/upload', {
-                        //     method: 'POST',
-                        //     body: formData
-                        // })
 
                         const result = await res.json();
 
@@ -192,8 +183,8 @@ const Navbar = (props: IProps) => {
                 setChatList([...chatList, data]);
                 setChatText('');
             }
-            chatRef.current?.focus();
         }
+        chatRef.current?.focus();
     }
 
     const scrollToBottom = () => {
@@ -277,14 +268,14 @@ const Navbar = (props: IProps) => {
                 <div>
                     <div className="x-code">
                         <div>
-                            <img src={Utills.urlString(props.host.image)} alt="user" />
-                            <span className='spot-name'>{props.host.username} session</span>
+                            <img src={Utills.urlString(props.host?.image)} alt="user" />
+                            <span className='spot-name'>{props.host?.username} session</span>
                         </div>
                         <p>{Utills.convertTrackingTime(time)}</p>
                     </div>
                     <div className="x-btn x-controller">
                         <span onClick={() => changeActive('chat')}><BsFillChatRightDotsFill /></span>
-                        <span onClick={screenSharing} ><FaDesktop /></span>
+                        <span onClick={() => props.screenSharing()} ><FaDesktop /></span>
                         <span onClick={() => changeActive('audio')}>{activeButton.audio ? <FaMicrophone /> : <FaMicrophoneSlash />}</span>
                         <span onClick={() => changeActive('video')}>{activeButton.video ? <FaVideo /> : <FaVideoSlash />}</span>
                         <span onClick={() => changeActive('setting')}><FaCog /></span>
@@ -302,7 +293,7 @@ const Navbar = (props: IProps) => {
                         <div>
                             {
                                 chatList.map((ele, index) => (
-                                    <ChatElement key={index} {...{ data: ele, myId: props.host.clientId }} />
+                                    <ChatElement key={index} {...{ data: ele, myId: props.host?.clientId + '' }} />
                                 ))
                             }
                         </div>

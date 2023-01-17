@@ -47,29 +47,27 @@ export default {
     },
 
     setLocalStream(stream) {
-        const mainVideoEle = document.getElementById('host');
+        const hostVideoElement = document.getElementById('host');
 
-        if (mainVideoEle) {
-            mainVideoEle.srcObject = stream;
+        if (hostVideoElement) {
+            hostVideoElement.srcObject = stream;
         }
+    },
+
+    setScreenStream(stream) {
+        const screenElement = document.getElementById('screen');
+        if (screenElement)
+            screenElement.srcObject = stream;
     },
 
     async screenSharing() {
         try {
-            const video = document.getElementById('main');
             const options = { audio: false, video: true };
 
             if (window.adapter.browserDetails.browser === 'firefox') {
                 window.adapter.browserShim.shimGetDisplayMedia(window, 'screen');
             }
-
             const screenStream = await navigator.mediaDevices.getDisplayMedia(options);
-
-            screenStream.getVideoTracks()[0].addEventListener('ended', () => {
-                console.log('The user has ended sharing the screen');
-            });
-            if (video)
-                video.srcObject = screenStream;
 
             return screenStream;
         }
@@ -78,43 +76,83 @@ export default {
         }
     },
 
-    adjustVideoSize(className, width, height, count, panel) {
+    adjustVideoSize(width, height, guest, panel, shared) {
+        let elements = [];
         const min_separate = 10;
-        const elements = document.getElementsByClassName(className);
-        const guestElement = document.getElementById('video-guest');
+
         const hostElement = document.getElementById('video-host');
-        const mainElement = document.getElementById('video-main');
+        const guestElement = document.getElementById('video-guest');
+        const screenElement = document.getElementById('video-screen');
+        const screenVideoElement = document.getElementById('screen');
+
+        if (shared) {
+            elements.push(screenElement);
+            screenElement.style.display = 'block';
+        }
+        else {
+            screenElement.style.display = 'none';
+        }
+
+        if (guest > 0) elements.push(guestElement);
+        elements.push(hostElement);
+
+        const count = elements.length;
 
         if (count === 1) {
             hostElement.style.width = width + 'px';
             hostElement.style.height = height + 'px';
             hostElement.style.top = '0px';
             hostElement.style.left = '0px';
+            hostElement.style.border = 'none';
             hostElement.style.overflow = 'visible';
             hostElement.childNodes[1].childNodes[0].classList.remove('dragable');
             return;
         }
 
-        if (panel === 1) {
-            guestElement.style.width = width + 'px';
-            guestElement.style.height = height + 'px';
-            guestElement.style.top = '0px';
-            guestElement.style.left = '0px';
-            guestElement.style.overflow = 'visible';
-            hostElement.childNodes[1].childNodes[0].classList.remove('dragable');
+        if (!panel) {
+            if (shared) {
+                screenElement.style.width = width + 'px';
+                screenElement.style.height = height + 'px';
+                screenElement.style.top = '0px';
+                screenElement.style.left = '0px';
+                screenElement.style.border = 'none';
+                screenElement.style.overflow = 'visible';
+                screenElement.childNodes[1].childNodes[0].classList.remove('dragable');
 
+                screenVideoElement.style.maxWidth = width + 'px';
+                screenVideoElement.style.maxHeight = height + 'px';
+
+                if (guest > 0) {
+                    guestElement.style.width = width / 6 + 'px';
+                    guestElement.style.height = width / 6 * 5 / 8 + 'px';
+                    guestElement.style.top = height / 20 + 'px';
+                    guestElement.style.left = width - 30 - width / 6 + 'px';
+                    guestElement.style.border = '1px solid #328132';
+                    guestElement.style.overflow = 'hidden';
+                    guestElement.childNodes[1].childNodes[0].classList.add('dragable');
+                }
+            }
+            else {
+                if (guest > 0) {
+                    guestElement.style.width = width + 'px';
+                    guestElement.style.height = height + 'px';
+                    guestElement.style.top = '0px';
+                    guestElement.style.left = '0px';
+                    guestElement.style.border = 'none';
+                    guestElement.style.overflow = 'visible';
+                    guestElement.childNodes[1].childNodes[0].classList.remove('dragable');
+                }
+            }
             hostElement.style.width = width / 6 + 'px';
             hostElement.style.height = width / 6 * 5 / 8 + 'px';
             hostElement.style.top = height - height / 20 - width / 6 * 5 / 8 + 'px';
             hostElement.style.left = width - 30 - width / 6 + 'px';
-            hostElement.childNodes[1].childNodes[0].classList.add('dragable');
+            hostElement.style.border = '1px solid #328132';
             hostElement.style.overflow = 'hidden';
+            hostElement.childNodes[1].childNodes[0].classList.add('dragable');
         }
 
-        if (panel === 0) {
-            hostElement.style.overflow = 'hidden';
-            guestElement.style.overflow = 'hidden';
-
+        if (panel) {
             let rest_space_min = width * height,
                 suitable_widthcount = 0,
                 suitable_heightcount = 0;
@@ -155,6 +193,11 @@ export default {
                 realHeight = realWidth * 5 / 8;
             }
 
+            if (shared) {
+                screenVideoElement.style.maxWidth = realWidth + 'px';
+                screenVideoElement.style.maxHeight = realHeight + 'px';
+            }
+
             for (let i = 0; i < suitable_heightcount; i++) {
                 for (let j = 0; j < suitable_widthcount; j++) {
                     const index = suitable_widthcount * i + j;
@@ -172,13 +215,13 @@ export default {
                     elements[index].style.height = realHeight + 'px';
                     elements[index].style.top = top + 'px';
                     elements[index].style.left = left + 'px';
+                    elements[index].style.overflow = 'hidden';
+                    elements[index].style.border = '1px solid #328132';
                     elements[index].childNodes[1].childNodes[0].classList.remove('dragable');
                 }
             }
         }
     }
-
-
 
     /**
      * @param {MediaProvider} str

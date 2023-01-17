@@ -28,10 +28,10 @@ const Video = (props: IProps) => {
     }
 
     const changeToggle = () => {
-        setToggle(!toggle);
         if (props.onSwitchToggle) {
-            props.onSwitchToggle(toggle);
+            props.onSwitchToggle(!toggle);
         }
+        setToggle(!toggle);
     }
 
     const handleMouseDown = (e: any) => {

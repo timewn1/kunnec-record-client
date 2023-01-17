@@ -33,19 +33,14 @@ const useWindowSize = () => {
 
 const Home = () => {
     const [sId, setSId] = useState('');
-    const [myStream, setMyStream] = useState<any>();
-    const [myPc, setMyPc] = useState<IPc>(
-        {
-            clientId: '',
-            id: new Date().valueOf(),
-            first_name: "",
-            last_name: "",
-            username: "",
-            gender: -1,
-            image: "",
-        }
-    );
+    const [panel, setPanel] = useState(false);
+    const [shared, setShared] = useState(false);
+
+    const [myPc, setMyPc] = useState<IPc | null>(null);
     const [guestPC, setGuestPC] = useState<IPc[]>([]);
+
+    const [myStream, setMyStream] = useState<any>();
+    const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
     const [setting, setSetting] = useState<ISetting>({
         video: '',
         audioInput: ''
@@ -54,16 +49,15 @@ const Home = () => {
         audio: true,
         video: true
     });
-    const [panel, setPanel] = useState(0);
 
     const room = window.location.hash.split('#')[1];
     const [width, height] = useWindowSize();
 
-    const setMedia = async (id: string) => {
-        const _myStream = await h.getUserFullMedia(setting);
-        h.setLocalStream(_myStream);
-        setMyStream(_myStream);
-        return _myStream;
+    const setMedia = async () => {
+        const stream = await h.getUserFullMedia(setting);
+        h.setLocalStream(stream);
+        setMyStream(stream);
+        return stream;
     }
 
     const broadcastNewTracks = (stream: any, type: string) => {
@@ -76,11 +70,9 @@ const Home = () => {
                 track = stream.getVideoTracks()[0];
             }
 
-            for (let p in window.socketPc) {
-                let pName = window.socketPc[p];
-                if (typeof pName === 'object') {
-                    h.replaceTrack(track, pName);
-                }
+            let pName = window.socketPc[guestPC[0].clientId];
+            if (typeof pName === 'object') {
+                h.replaceTrack(track, pName);
             }
         }
     }
@@ -120,12 +112,6 @@ const Home = () => {
         setSetting(_setting);
     }
 
-    const disConnect = (partnerId: string) => {
-        socket.emit('disconnect user', {
-            partnerId: partnerId,
-        });
-    }
-
     const getUserAuth = async () => {
         const res = await fetch('https://kunnec.com/api/get-info');
         const json = await res.json();
@@ -158,13 +144,145 @@ const Home = () => {
         return u;
     }
 
+    const switchToggle = (index: boolean) => {
+        setPanel(index);
+    }
+
+    const screenSharingStart = async () => {
+        if (shared) {
+            Store.addNotification({
+                title: "Warning!",
+                message: `Already shared a screen.`,
+                type: "danger",
+                insert: "top",
+                container: "top-right",
+                animationIn: ["animate__animated", "animate__fadeIn"],
+                animationOut: ["animate__animated", "animate__fadeOut"],
+                dismiss: {
+                    duration: 2000,
+                    onScreen: true
+                }
+            });
+            return;
+        }
+
+        const screen = await h.screenSharing();
+
+        if (screen) {
+            setShared(true);
+            setScreenStream(screen);
+            h.setScreenStream(screen);
+
+            if (guestPC.length > 0)
+                socket.emit('screenShareStart', {
+                    to: guestPC[0].clientId,
+                    sender: sId,
+                });
+
+            screen.getVideoTracks()[0].addEventListener('ended', () => {
+                stopSharing();
+            });
+        }
+    }
+
+    const stopSharing = () => {
+        if (window.socketPc['screenShare']) {
+            window.socketPc['screenShare'] = null;
+            delete window.socketPc['screenShare'];
+        }
+
+        setShared(false);
+
+        if (guestPC.length > 0) {
+            socket.emit('screenShareStop', {
+                to: guestPC[0].clientId,
+            })
+        }
+    }
+
+    const initNewUser = async (createOffer: boolean, isScreen: boolean, stream: MediaStream | null, videoElement: string, id: string, partnerName: string, cb: Function) => {
+        try {
+            let con = new RTCPeerConnection(h.getIceServer());
+            cb(con);
+
+            //send ice candidate to partnerNames
+            con.onicecandidate = ({ candidate }) => {
+                socket.emit('ice candidates', {
+                    candidate: candidate,
+                    to: partnerName,
+                    sender: id,
+                    isScreen: isScreen
+                });
+            };
+
+            if (!isScreen || !createOffer) {
+                //add track
+                con.ontrack = (e) => {
+                    const elem = document.getElementById(videoElement) as any;
+                    if (e.streams && e.streams[0]) {
+                        elem.srcObject = e.streams[0];
+                    }
+                };
+            }
+
+            con.onconnectionstatechange = (d) => {
+                switch (con.iceConnectionState) {
+                    case 'disconnected':
+                    case 'failed':
+                    case 'closed':
+                        break;
+                }
+            };
+
+            con.onsignalingstatechange = (d) => {
+                switch (con.signalingState) {
+                    case 'closed':
+                        alert("Signalling state is 'closed'");
+                        break;
+                }
+            };
+
+            if (stream) {
+                stream.getTracks().forEach((track) => {
+                    con.addTrack(track, stream); //should trigger negotiationneeded event
+                });
+
+                if (!isScreen) {
+                    h.setLocalStream(stream);
+                    setMyStream(stream);
+                }
+                else {
+
+                }
+            }
+
+            //create offer
+            if (createOffer) {
+                con.onnegotiationneeded = async () => {
+                    let offer = await con.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
+
+                    await con.setLocalDescription(offer);
+                    socket.emit('sdp', {
+                        description: con.localDescription,
+                        to: partnerName,
+                        sender: id,
+                        isScreen: isScreen
+                    });
+                };
+            }
+        } catch (error) {
+            console.error('initNewUser', error);
+        }
+        return null;
+    }
+
     useEffect(() => {
         const navHeight = document.getElementsByTagName('nav')[0].offsetHeight;
         const mainHeight = height - navHeight;
 
-        h.adjustVideoSize('video-ele', width, mainHeight, guestPC.length + 1, panel);
+        h.adjustVideoSize(width, mainHeight, guestPC.length, panel, shared);
 
-    }, [width, height, guestPC, panel]);
+    }, [width, height, guestPC, panel, shared]);
 
     useEffect(() => {
         try {
@@ -176,7 +294,6 @@ const Home = () => {
 
                 const _myPc = await getUserAuth();
 
-                setMedia(myId);
                 setSId(myId);
                 setMyPc({ ..._myPc, clientId: myId });
 
@@ -188,10 +305,11 @@ const Home = () => {
             });
 
             socket.on('room', async (data: any) => {
-                setGuestPC([data.user]);
-                setPanel(1);
+                const stream = await setMedia() as MediaStream;
 
-                await initNewUser(false, myId, data.socketId, (con) => window.socketPc[data.socketId] = con);
+                setGuestPC([data.user]);
+
+                await initNewUser(false, false, stream, 'guest', myId, data.socketId, (con) => window.socketPc[data.socketId] = con);
 
                 socket.emit('newUserStart', {
                     to: data.socketId,
@@ -215,135 +333,97 @@ const Home = () => {
             });
 
             socket.on('newUserStart', async (data: any) => {
+                const stream = await setMedia() as MediaStream;
+
                 setGuestPC([data.user]);
-                setPanel(1);
-                initNewUser(true, myId, data.sender, (con) => window.socketPc[data.sender] = con);
+
+                initNewUser(true, false, stream, 'guest', myId, data.sender, (con) => window.socketPc[data.sender] = con);
             });
+
+            socket.on('screenShareStart', async (data: any) => {
+                await initNewUser(false, true, null, 'screen', myId, data.sender, (con) => window.socketPc['screenShare'] = con);
+
+                socket.emit('screenShareReady', {
+                    to: data.sender,
+                    sender: myId,
+                })
+                setShared(true);
+            });
+
+            socket.on('screenShareReady', async (data: any) => {
+                initNewUser(true, true, screenStream, 'screen', myId, data.sender, (con) => window.socketPc['screenShare'] = con);
+            });
+
+            socket.on('screenShareStop', () => {
+                if (window.socketPc['screenShare']) {
+                    window.socketPc['screenShare'] = null;
+                    delete window.socketPc['screenShare'];
+                }
+                setShared(false);
+            })
 
             socket.on('ice candidates', async (data: any) => {
                 if (data.candidate) {
-                    if (window.socketPc[data.sender]) {
-                        await window.socketPc[data.sender].addIceCandidate(new RTCIceCandidate(data.candidate));
+                    let key = '';
+
+                    if (data.isScreen) key = 'screenShare';
+                    else key = data.sender;
+
+                    if (window.socketPc[key]) {
+                        await window.socketPc[key].addIceCandidate(new RTCIceCandidate(data.candidate));
                     }
                 }
             });
 
             socket.on('sdp', async (data: any) => {
-                if (window.socketPc[data.sender]) {
+                let key = '';
+
+                if (data.isScreen) key = 'screenShare';
+                else key = data.sender;
+
+                if (window.socketPc[key]) {
                     if (data.description.type === 'offer') {
-                        await window.socketPc[data.sender].setRemoteDescription(new RTCSessionDescription(data.description));
+                        await window.socketPc[key].setRemoteDescription(new RTCSessionDescription(data.description));
 
-                        if (window.socketPc[data.sender]) {
-                            const answer = await window.socketPc[data.sender].createAnswer();
+                        if (window.socketPc[key]) {
+                            const answer = await window.socketPc[key].createAnswer();
 
-                            await window.socketPc[data.sender].setLocalDescription(answer);
+                            await window.socketPc[key].setLocalDescription(answer);
 
                             socket.emit('sdp', {
-                                description: window.socketPc[data.sender].localDescription,
+                                description: window.socketPc[key].localDescription,
                                 to: data.sender,
                                 sender: myId,
+                                isScreen: data.isScreen,
                             });
                         } else {
-                            console.error("data.sender socket is null");
+                            console.error(`${key} socket is null`);
                         }
                     } else if (data.description.type === 'answer') {
-                        await window.socketPc[data.sender].setRemoteDescription(new RTCSessionDescription(data.description));
+                        await window.socketPc[key].setRemoteDescription(new RTCSessionDescription(data.description));
                     }
                 }
             });
-
-            socket.on('disconnected room', () => {
-                window.setTimeout(() => {
-                    window.location.href = '/public/k_spot/k_spot';
-                }, 1000);
-            })
 
             socket.on('disconnect room', (data: any) => {
                 delete window.socketPc[data.clientId];
-                setGuestPC([]);
-
-                Store.addNotification({
-                    message: `${guestPC[0]?.first_name} ${guestPC[0]?.last_name} left the Room`,
-                    type: "danger",
-                    insert: "top",
-                    container: "top-right",
-                    animationIn: ["animate__animated", "animate__fadeIn"],
-                    animationOut: ["animate__animated", "animate__fadeOut"],
-                    dismiss: {
-                        duration: 2000,
-                        onScreen: true
-                    }
-                });
-            });
-
-            const initNewUser = async (createOffer: boolean, id: string, partnerName: string, cb: Function) => {
-                try {
-                    let con = new RTCPeerConnection(h.getIceServer());
-                    cb(con);
-
-                    const stream = await h.getUserFullMedia(setting);
-
-                    //send ice candidate to partnerNames
-                    con.onicecandidate = ({ candidate }) => {
-                        socket.emit('ice candidates', {
-                            candidate: candidate,
-                            to: partnerName,
-                            sender: id,
-                        });
-                    };
-
-                    //add track
-                    con.ontrack = (e) => {
-                        const elem = document.getElementById('guest') as any;
-                        if (e.streams && e.streams[0]) {
-                            elem.srcObject = e.streams[0];
+                if (guestPC[0]) {
+                    Store.addNotification({
+                        message: `${guestPC[0]?.first_name} ${guestPC[0]?.last_name} left the Room`,
+                        type: "danger",
+                        insert: "top",
+                        container: "top-right",
+                        animationIn: ["animate__animated", "animate__fadeIn"],
+                        animationOut: ["animate__animated", "animate__fadeOut"],
+                        dismiss: {
+                            duration: 2000,
+                            onScreen: true
                         }
-                    };
-
-                    con.onconnectionstatechange = (d) => {
-                        switch (con.iceConnectionState) {
-                            case 'disconnected':
-                            case 'failed':
-                            case 'closed':
-                                break;
-                        }
-                    };
-
-                    con.onsignalingstatechange = (d) => {
-                        switch (con.signalingState) {
-                            case 'closed':
-                                alert("Signalling state is 'closed'");
-                                break;
-                        }
-                    };
-
-                    if (stream) {
-                        stream.getTracks().forEach((track) => {
-                            con.addTrack(track, stream); //should trigger negotiationneeded event
-                        });
-
-                        h.setLocalStream(stream);
-                        setMyStream(stream);
-
-                        //create offer
-                        if (createOffer) {
-                            con.onnegotiationneeded = async () => {
-                                let offer = await con.createOffer({ offerToReceiveAudio: true, offerToReceiveVideo: true });
-
-                                await con.setLocalDescription(offer);
-                                socket.emit('sdp', {
-                                    description: con.localDescription,
-                                    to: partnerName,
-                                    sender: id,
-                                });
-                            };
-                        }
-                    }
-                } catch (error) {
-                    console.error('initNewUser', error);
+                    });
                 }
-                return null;
-            }
+
+                setGuestPC([]);
+            });
         } catch (error) {
             console.error('Socket connect error = ', error);
         }
@@ -353,27 +433,27 @@ const Home = () => {
             socket.off('disconnect');
             socket.off('sdp');
             socket.off('ice candidates');
+            socket.off('screenShareStart');
+            socket.off('screenShareReady');
             socket.off('newUserStart');
             socket.off('room');
             socket.off('disconnect room');
         };
-    }, [myPc, guestPC]);
+    }, [myPc, guestPC, screenStream]);
 
-    const switchToggle = (index: boolean) => {
-        setPanel(Number(index));
-    }
+    useEffect(() => {
+        setMedia();
+    }, [])
 
     return (
         <>
-            <Navbar  {...{ host: myPc, partner: guestPC[0], socket: socket }} onToggle={(key: string) => toggleAction(key)} disconnect={(id: string) => { disConnect(id) }} onSetting={(index: number, type: string) => { changeSetting(index, type) }} />
+            <Navbar  {...{ host: myPc, partner: guestPC[0], socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: number, type: string) => changeSetting(index, type)} />
             <main className='home'>
                 <div className="main">
                     <div className='main-board'>
-                        {/* <Video {...{ name: '', type: 'main', }} /> */}
+                        <Video {...{ name: '', type: 'screen', }} />
                         {
-                            guestPC.length > 0 ?
-                                <Video {...{ name: guestPC[0].first_name, type: 'guest' }} />
-                                : <></>
+                            guestPC.length > 0 ? <Video {...{ name: guestPC[0].first_name, type: 'guest' }} /> : <></>
                         }
                         <Video {...{ name: 'You', type: 'host', }} onSwitchToggle={(index: boolean) => switchToggle(index)} />
                     </div>
