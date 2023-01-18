@@ -300,8 +300,8 @@ const Navbar = (props: IProps) => {
                         <span onClick={() => changeActive('video')}>{activeButton.video ? <FaVideo /> : <FaVideoSlash />}</span>
                         <span onClick={() => changeActive('setting')}><FaCog /></span>
                         {/* <span onClick={recording}><BsRecordCircle /></span> */}
-                        <button className='active exit-btn' onClick={() => changeActive('exit')}>Exit Session</button>
                     </div>
+                    <button className='active exit-btn' onClick={() => changeActive('exit')}>Exit&nbsp;Session</button>
                 </div>
             </nav>
             <div className={`modal left ${activeButton.chat ? "show" : ''}`} onClick={() => setBadge(false)}>

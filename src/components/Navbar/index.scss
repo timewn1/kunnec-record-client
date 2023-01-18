@@ -26,21 +26,11 @@ nav {
 
     >div {
         width: 100%;
-        // max-width: 1440px;
+        max-width: 1200px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-    }
-
-    @media (max-width: 576px) {
-        height: 6em;
-        padding: 0.5em;
-
-        >div {
-            flex-wrap: wrap-reverse;
-            justify-content: center;
-            gap: 0.5em;
-        }
+        position: relative;
     }
 
     .x-btn {
@@ -49,6 +39,10 @@ nav {
     }
 
     .x-controller {
+        position: absolute;
+        right: 200px;
+        z-index: 5;
+
         >span {
             position: relative;
             display: flex;
@@ -84,32 +78,47 @@ nav {
             }
         }
 
-        .exit-btn {
-            background: red;
-            color: white;
-            border: none;
-            padding: 0 1em;
-            font-size: .8em;
-            font-weight: 500;
-            margin-left: 200px;
-            margin-top: 5px;
-            margin-bottom: 5px;
+        @media (max-width: 768px) {
+            right: 110px;
+        }
 
-            &:hover {
-                background-color: rgb(255, 80, 80);
-            }
+        @media (max-width: 678px) {
+            top: 4.5em;
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+        }
 
-            &:active {
-                background-color: rgb(255, 120, 120);
-            }
+        @media (max-width: 506px) {
+            top: 4.1em;
+        }
+    }
 
-            @media (max-width: 956px) {
-                margin-left: 30px;
-            }
+    .exit-btn {
+        background: red;
+        color: white;
+        border: none;
+        padding: 10px 1em;
+        font-size: .8em;
+        font-weight: 500;
+        margin-left: 200px;
+        margin-top: 5px;
+        margin-bottom: 5px;
 
-            @media (max-width: 768px) {
-                margin-left: 0;
-            }
+        &:hover {
+            background-color: rgb(255, 80, 80);
+        }
+
+        &:active {
+            background-color: rgb(255, 120, 120);
+        }
+
+        @media (max-width: 956px) {
+            margin-left: 30px;
+        }
+
+        @media (max-width: 768px) {
+            margin-left: 0;
         }
     }
 
@@ -117,7 +126,6 @@ nav {
         padding: 0 1em;
         border-radius: 1em;
         max-width: 240px;
-        width: 240px;
 
         >p {
             padding-left: 2.2em;
@@ -139,9 +147,25 @@ nav {
 
         .spot-name {
             display: block;
-            width: 200px;
             font-size: 1.1em;
         }
+
+        @media (max-width: 506px) {
+            padding: 0 .2em;
+
+            >p {
+                position: fixed;
+                top: 5.1em;
+                z-index: 5;
+                left: 10px;
+                padding-left: 0;
+                margin: auto;
+            }
+        }
+    }
+
+    @media (max-width: 506px) {
+        padding: 0 .2em;
     }
 }
 
