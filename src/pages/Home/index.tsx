@@ -407,6 +407,9 @@ const Home = () => {
 
             socket.on('disconnect room', (data: any) => {
                 delete window.socketPc[data.clientId];
+                if (window.socketPc['screenShare'])
+                    delete window.socketPc['screenShare'];
+
                 if (guestPC[0]) {
                     Store.addNotification({
                         message: `${guestPC[0]?.first_name} ${guestPC[0]?.last_name} left the Room`,
@@ -422,6 +425,7 @@ const Home = () => {
                     });
                 }
 
+                setShared(false);
                 setGuestPC([]);
             });
         } catch (error) {
