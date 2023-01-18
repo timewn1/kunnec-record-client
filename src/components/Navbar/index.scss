@@ -156,10 +156,11 @@ nav {
             >p {
                 position: fixed;
                 top: 5.1em;
-                z-index: 5;
                 left: 10px;
                 padding-left: 0;
                 margin: auto;
+                text-shadow: 1px 1px 2px #161616;
+                z-index: 5;
             }
         }
     }
