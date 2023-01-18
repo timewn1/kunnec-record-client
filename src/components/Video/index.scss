@@ -10,8 +10,7 @@
     border-radius: 8px;
     overflow: hidden;
 
-    #host,
-    #guest {
+    video {
         height: 100%;
         width: 100%;
     }
@@ -88,5 +87,9 @@
 
     .v-cover {
         object-fit: cover;
+
+        &#screen {
+            object-fit: contain;
+        }
     }
 }
