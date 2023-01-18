@@ -49,8 +49,8 @@ nav {
     }
 
     .x-controller {
-        span {
-            cursor: pointer;
+        >span {
+            position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -60,6 +60,7 @@ nav {
             font-size: 1.1em;
 
             &:hover {
+                cursor: pointer;
                 border: 1px solid var(--primary);
             }
 
@@ -69,6 +70,17 @@ nav {
                 &:hover {
                     color: var(--danger-hover);
                 }
+            }
+
+            >.badge {
+                position: absolute;
+                top: 0px;
+                right: 5px;
+                font-size: 19px;
+                font-weight: 800;
+                color: #ff460e;
+
+                animation: badge-animation 1s step-end infinite;
             }
         }
 
@@ -130,5 +142,15 @@ nav {
             width: 200px;
             font-size: 1.1em;
         }
+    }
+}
+
+@keyframes badge-animation {
+    75% {
+        color: #e2fd47;
+    }
+
+    100% {
+        color: #e2fd47;
     }
 }

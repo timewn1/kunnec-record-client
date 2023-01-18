@@ -41,10 +41,12 @@ interface IProps {
 
 const Navbar = (props: IProps) => {
     const [time, setTime] = useState<number>(0);
+    const [badge, setBadge] = useState<boolean>(false);
     const [chatText, setChatText] = useState<string>('');
     const [fileName, setFileName] = useState<string>('');
     const [chatList, setChatList] = useState<IMessage[]>([]);
     const [videoList, setVideoList] = useState<any[]>([]);
+    const [uploading, setUploading] = useState<boolean>(false);
     const [inputAudioList, setInputAudioList] = useState<any[]>([]);
     const [activeButton, setActiveButton] = useState<IActive>(
         {
@@ -69,6 +71,9 @@ const Navbar = (props: IProps) => {
             props.onToggle(key);
         }
         setActiveButton(active);
+        if (key === 'chat' && badge) {
+            setBadge(false);
+        }
     }
 
     // const recording = () => {
@@ -108,6 +113,7 @@ const Navbar = (props: IProps) => {
 
     const sendMessage = async () => {
         if (!props.host) return;
+
         if (fileName !== '') {
             if (fileRef.current && fileRef.current.files) {
                 if (props.partner?.clientId) {
@@ -127,6 +133,7 @@ const Navbar = (props: IProps) => {
                     formData.append('file', fileRef.current.files[0]);
 
                     try {
+                        setUploading(true);
                         const res = await fetch('https://record.kunnec.com/upload', {
                             method: 'POST',
                             body: formData
@@ -159,12 +166,15 @@ const Navbar = (props: IProps) => {
                     } catch (err) {
                         console.error(err);
                     }
+                    setUploading(false);
                     removeFile();
                 }
             }
         }
         else {
-            if (chatText) {
+            let txt = chatText.replaceAll("\n\n", "");
+
+            if (txt && txt !== '\n') {
                 const data = {
                     time: new Date(),
                     content: chatText,
@@ -182,6 +192,9 @@ const Navbar = (props: IProps) => {
 
                 setChatList([...chatList, data]);
                 setChatText('');
+
+                if (chatRef.current)
+                    chatRef.current.style.height = '1.5em';
             }
         }
         chatRef.current?.focus();
@@ -245,6 +258,7 @@ const Navbar = (props: IProps) => {
 
         return () => {
             clearInterval(timeInterval);
+            chatRef.current?.removeEventListener('keyup', () => { });
         }
     }, []);
 
@@ -255,6 +269,7 @@ const Navbar = (props: IProps) => {
 
         props.socket.on('receiveChat', (data: any) => {
             setChatList([...chatList, data.data]);
+            setBadge(true);
         })
 
         return () => {
@@ -274,7 +289,12 @@ const Navbar = (props: IProps) => {
                         <p>{Utills.convertTrackingTime(time)}</p>
                     </div>
                     <div className="x-btn x-controller">
-                        <span onClick={() => changeActive('chat')}><BsFillChatRightDotsFill /></span>
+                        <span onClick={() => changeActive('chat')}>
+                            <BsFillChatRightDotsFill />
+                            {
+                                badge ? <span className="badge" >!</span> : <></>
+                            }
+                        </span>
                         <span onClick={() => props.screenSharing()} ><FaDesktop /></span>
                         <span onClick={() => changeActive('audio')}>{activeButton.audio ? <FaMicrophone /> : <FaMicrophoneSlash />}</span>
                         <span onClick={() => changeActive('video')}>{activeButton.video ? <FaVideo /> : <FaVideoSlash />}</span>
@@ -284,7 +304,7 @@ const Navbar = (props: IProps) => {
                     </div>
                 </div>
             </nav>
-            <div className={`modal left ${activeButton.chat ? "show" : ''}`}>
+            <div className={`modal left ${activeButton.chat ? "show" : ''}`} onClick={() => setBadge(false)}>
                 <div className="modal-content">
                     <div className="modal-header">
                         <span onClick={() => { changeActive('chat') }}><BsXLg /></span>
@@ -306,9 +326,22 @@ const Navbar = (props: IProps) => {
                             ref={chatRef}
                             value={chatText}
                             onChange={(e) => changeText(e)}
+                            onKeyDown={(e) => {
+                                if (e.key == "Enter" && !e.shiftKey) {
+                                    sendMessage();
+                                    e.preventDefault();
+                                }
+                            }}
                         />
                         <div ref={fileDisplayRef} className="file-element" ><BsFillFileEarmarkCheckFill />&nbsp;{Utills.recudeFileName(fileName)}
-                            <span onClick={removeFile}><BsXLg /></span>
+                            {
+                                !uploading ? <span onClick={removeFile}><BsXLg /></span> :
+                                    <span className="spin" role="progressbar">
+                                        <svg viewBox="22 22 44 44">
+                                            <circle cx="44" cy="44" r="20.2" fill="none" stroke-width="3.6"></circle>
+                                        </svg>
+                                    </span>
+                            }
                         </div>
                         <span className='chat-send-btn' onClick={() => sendMessage()}><BiSend /></span>
                         <span onClick={() => { fileRef.current?.click(); }}><ImAttachment /></span>

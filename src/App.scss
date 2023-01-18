@@ -212,7 +212,7 @@ button {
           width: calc(400px - 1.2em - 30px - 0.5em);
           font-size: 16px;
           border: none;
-          color: rgba(200, 200, 200, 0.9);
+          color: rgba(255, 255, 255, 0.9);
           background-color: rgba(255, 255, 255, 0);
           outline: none;
           resize: none;
@@ -238,7 +238,7 @@ button {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: rgba($color: #fff, $alpha: 0.8);
+          color: rgba($color: #fff, $alpha: 0.9);
 
           &:hover {
             cursor: pointer;
@@ -253,11 +253,39 @@ button {
           width: calc(400px - 1.2em - 30px - 0.5em);
           height: 1.5em;
           font-size: 16px;
-          color: rgba(200, 200, 200, 0.9);
+          color: rgba(255, 255, 255, 0.9);
 
           >span {
             margin-left: 10px;
             font-size: 14px;
+
+            &.spin {
+              box-sizing: border-box;
+              max-width: 105ch;
+              position: relative;
+              display: inline-block;
+              color: #ffffff;
+              -webkit-animation: animation-61bdi0 1.4s linear infinite;
+              animation: animation-61bdi0 1.4s linear infinite;
+              width: 18px;
+              height: 18px;
+
+              svg {
+                display: block;
+                overflow-clip-margin: content-box;
+                overflow: hidden;
+                position: absolute;
+                top: 2px;
+
+                circle {
+                  stroke: currentColor;
+                  stroke-dasharray: 80px, 200px;
+                  stroke-dashoffset: 0;
+                  -webkit-animation: animation-1p2h4ri 1.4s ease-in-out infinite;
+                  animation: animation-1p2h4ri 1.4s ease-in-out infinite;
+                }
+              }
+            }
           }
         }
 
@@ -382,5 +410,22 @@ button {
     h1 {
       margin-bottom: 1.3em;
     }
+  }
+}
+
+@keyframes animation-1p2h4ri {
+  0% {
+    stroke-dasharray: 1px, 200px;
+    stroke-dashoffset: 0;
+  }
+
+  50% {
+    stroke-dasharray: 100px, 200px;
+    stroke-dashoffset: -15px;
+  }
+
+  100% {
+    stroke-dasharray: 100px, 200px;
+    stroke-dashoffset: -125px;
   }
 }
