@@ -113,33 +113,33 @@ const Home = () => {
     }
 
     const getUserAuth = async () => {
-        const res = await fetch('https://kunnec.com/api/get-info');
-        const json = await res.json();
-        const auth = json.authorization;
+        // const res = await fetch('https://kunnec.com/api/get-info');
+        // const json = await res.json();
+        // const auth = json.authorization;
 
-        if (auth === 'fail') {
-            window.location.href = '/public/login';
-        }
-
-        const u = {
-            clientId: sId,
-            id: auth['id'],
-            first_name: auth['first_name'],
-            last_name: auth['last_name'],
-            username: auth['username'],
-            gender: auth['gender'],
-            image: auth['image'],
-        }
+        // if (auth === 'fail') {
+        //     window.location.href = '/public/login';
+        // }
 
         // const u = {
-        //     clientId: 'clientId',
-        //     id: 0,
-        //     first_name: 'Calor',
-        //     last_name: 'Brown',
-        //     username: 'Calor',
-        //     gender: 0,
-        //     image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
+        //     clientId: sId,
+        //     id: auth['id'],
+        //     first_name: auth['first_name'],
+        //     last_name: auth['last_name'],
+        //     username: auth['username'],
+        //     gender: auth['gender'],
+        //     image: auth['image'],
         // }
+
+        const u = {
+            clientId: 'clientId',
+            id: 0,
+            first_name: 'Calor',
+            last_name: 'Brown',
+            username: 'Calor',
+            gender: 0,
+            image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
+        }
 
         return u;
     }

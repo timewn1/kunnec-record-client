@@ -110,6 +110,10 @@ export default {
         }
 
         if (!panel) {
+            let modalWidth = width / 6;
+
+            if (modalWidth < 240) modalWidth = 240;
+
             if (shared) {
                 screenElement.style.width = width + 'px';
                 screenElement.style.height = height + 'px';
@@ -123,10 +127,10 @@ export default {
                 screenVideoElement.style.maxHeight = height + 'px';
 
                 if (guest > 0) {
-                    guestElement.style.width = width / 6 + 'px';
-                    guestElement.style.height = width / 6 * 5 / 8 + 'px';
+                    guestElement.style.width = modalWidth + 'px';
+                    guestElement.style.height = modalWidth * 5 / 8 + 'px';
                     guestElement.style.top = height / 20 + 'px';
-                    guestElement.style.left = width - 30 - width / 6 + 'px';
+                    guestElement.style.left = width - 30 - modalWidth + 'px';
                     guestElement.style.border = '1px solid #328132';
                     guestElement.style.overflow = 'hidden';
                     guestElement.childNodes[1].childNodes[0].classList.add('dragable');
@@ -143,10 +147,11 @@ export default {
                     guestElement.childNodes[1].childNodes[0].classList.remove('dragable');
                 }
             }
-            hostElement.style.width = width / 6 + 'px';
-            hostElement.style.height = width / 6 * 5 / 8 + 'px';
-            hostElement.style.top = height - height / 20 - width / 6 * 5 / 8 + 'px';
-            hostElement.style.left = width - 30 - width / 6 + 'px';
+
+            hostElement.style.width = modalWidth + 'px';
+            hostElement.style.height = modalWidth * 5 / 8 + 'px';
+            hostElement.style.top = height - height / 20 - modalWidth * 5 / 8 + 'px';
+            hostElement.style.left = width - 30 - modalWidth + 'px';
             hostElement.style.border = '1px solid #328132';
             hostElement.style.overflow = 'hidden';
             hostElement.childNodes[1].childNodes[0].classList.add('dragable');
