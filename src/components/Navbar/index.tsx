@@ -35,7 +35,7 @@ interface IProps {
     screenSharing: screenSharingFunction;
     onSetting: onSettingFunction;
     host: IPc | null;
-    partner?: IPc;
+    partner: IPc[];
     socket: any;
 }
 
@@ -116,7 +116,7 @@ const Navbar = (props: IProps) => {
 
         if (fileName !== '') {
             if (fileRef.current && fileRef.current.files) {
-                if (props.partner?.clientId) {
+                if (props.partner.length > 0) {
                     const uploadedName = new Date().valueOf().toString();
                     const data = {
                         time: new Date(),
@@ -144,7 +144,7 @@ const Navbar = (props: IProps) => {
                         if (result.state) {
                             props.socket.emit('sendChat', {
                                 content: data,
-                                to: props.partner?.clientId
+                                to: room
                             });
 
                             setChatList([...chatList, data]);
@@ -183,10 +183,10 @@ const Navbar = (props: IProps) => {
                     isFile: false,
                 }
 
-                if (props.partner?.clientId) {
+                if (props.partner.length > 0) {
                     props.socket.emit('sendChat', {
                         content: data,
-                        to: props.partner?.clientId
+                        to: room
                     });
                 }
 

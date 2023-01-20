@@ -106,6 +106,7 @@ export default {
             hostElement.style.border = 'none';
             hostElement.style.overflow = 'visible';
             hostElement.childNodes[1].childNodes[0].classList.remove('dragable');
+
             return;
         }
 
@@ -164,11 +165,10 @@ export default {
 
             for (let i = 1; i <= count; i++) {
                 let widthcount, heightcount = i;
-                if (count % i == 0) {
+                if (count % i == 0)
                     widthcount = parseInt(count / i);
-                } else {
+                else
                     widthcount = parseInt(count / i) + 1;
-                }
 
                 let cell_width = width / widthcount;
                 let cell_height = height / heightcount;
@@ -206,12 +206,12 @@ export default {
             for (let i = 0; i < suitable_heightcount; i++) {
                 for (let j = 0; j < suitable_widthcount; j++) {
                     const index = suitable_widthcount * i + j;
-                    if (index >= count) {
-                        return;
-                    }
+
+                    if (index >= count) return;
 
                     let top = (i + 1) * min_separate + diffHeight / 2 + realHeight * i;
                     let left = (j + 1) * min_separate + diffWidth / 2 + realWidth * j;
+
                     if (i === (suitable_heightcount - 1) && suitable_heightcount * suitable_widthcount > count) {
                         left = left + (suitable_heightcount * suitable_widthcount - count) * (realWidth + min_separate) / 2;
                     }

@@ -11,8 +11,8 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-const ENDPOINT = "https://record.kunnec.com/stream";
-// const ENDPOINT = "http://localhost:3001/stream";
+// const ENDPOINT = "https://record.kunnec.com/stream";
+const ENDPOINT = "http://localhost:3001/stream";
 
 const socket = socketIOClient(ENDPOINT);
 
@@ -34,7 +34,7 @@ const useWindowSize = () => {
 const Home = () => {
     const [sId, setSId] = useState('');
     const [panel, setPanel] = useState(false);
-    const [shared, setShared] = useState(false);
+    const [shared, setShared] = useState(0);
 
     const [myPc, setMyPc] = useState<IPc | null>(null);
     const [guestPC, setGuestPC] = useState<IPc[]>([]);
@@ -70,9 +70,13 @@ const Home = () => {
                 track = stream.getVideoTracks()[0];
             }
 
-            let pName = window.socketPc[guestPC[0].clientId];
-            if (typeof pName === 'object') {
-                h.replaceTrack(track, pName);
+            for (let p in window.socketPc) {
+                let pName = window.socketPc[p];
+
+                if (p === 'screenShare') continue;
+                if (typeof pName === 'object') {
+                    h.replaceTrack(track, pName);
+                }
             }
         }
     }
@@ -113,33 +117,33 @@ const Home = () => {
     }
 
     const getUserAuth = async () => {
-        const res = await fetch('https://kunnec.com/api/get-info');
-        const json = await res.json();
-        const auth = json.authorization;
+        // const res = await fetch('https://kunnec.com/api/get-info');
+        // const json = await res.json();
+        // const auth = json.authorization;
 
-        if (auth === 'fail') {
-            window.location.href = '/public/login';
-        }
-
-        const u = {
-            clientId: sId,
-            id: auth['id'],
-            first_name: auth['first_name'],
-            last_name: auth['last_name'],
-            username: auth['username'],
-            gender: auth['gender'],
-            image: auth['image'],
-        }
+        // if (auth === 'fail') {
+        //     window.location.href = '/public/login';
+        // }
 
         // const u = {
-        //     clientId: 'clientId',
-        //     id: 0,
-        //     first_name: 'Calor',
-        //     last_name: 'Brown',
-        //     username: 'Calor',
-        //     gender: 0,
-        //     image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
+        //     clientId: sId,
+        //     id: auth['id'],
+        //     first_name: auth['first_name'],
+        //     last_name: auth['last_name'],
+        //     username: auth['username'],
+        //     gender: auth['gender'],
+        //     image: auth['image'],
         // }
+
+        const u = {
+            clientId: 'clientId',
+            id: 0,
+            first_name: 'Calor',
+            last_name: 'Brown',
+            username: 'Calor',
+            gender: 0,
+            image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
+        }
 
         return u;
     }
@@ -169,14 +173,14 @@ const Home = () => {
         const screen = await h.screenSharing();
 
         if (screen) {
-            setShared(true);
+            setShared(1);
             setScreenStream(screen);
             h.setScreenStream(screen);
 
             if (guestPC.length > 0)
                 socket.emit('screenShareStart', {
-                    to: guestPC[0].clientId,
                     sender: sId,
+                    room: room
                 });
 
             screen.getVideoTracks()[0].addEventListener('ended', () => {
@@ -191,11 +195,11 @@ const Home = () => {
             delete window.socketPc['screenShare'];
         }
 
-        setShared(false);
+        setShared(0);
 
         if (guestPC.length > 0) {
             socket.emit('screenShareStop', {
-                to: guestPC[0].clientId,
+                room: room
             })
         }
     }
@@ -307,7 +311,7 @@ const Home = () => {
             socket.on('room', async (data: any) => {
                 const stream = await setMedia() as MediaStream;
 
-                setGuestPC([data.user]);
+                setGuestPC([...guestPC, data.user]);
 
                 await initNewUser(false, false, stream, 'guest', myId, data.socketId, (con) => window.socketPc[data.socketId] = con);
 
@@ -335,7 +339,7 @@ const Home = () => {
             socket.on('newUserStart', async (data: any) => {
                 const stream = await setMedia() as MediaStream;
 
-                setGuestPC([data.user]);
+                setGuestPC([...guestPC, data.user]);
 
                 initNewUser(true, false, stream, 'guest', myId, data.sender, (con) => window.socketPc[data.sender] = con);
             });
@@ -345,9 +349,10 @@ const Home = () => {
 
                 socket.emit('screenShareReady', {
                     to: data.sender,
-                    sender: myId,
-                })
-                setShared(true);
+                    sender: myId
+                });
+                console.log()
+                setShared(2);
             });
 
             socket.on('screenShareReady', async (data: any) => {
@@ -359,7 +364,7 @@ const Home = () => {
                     window.socketPc['screenShare'] = null;
                     delete window.socketPc['screenShare'];
                 }
-                setShared(false);
+                setShared(0);
             })
 
             socket.on('ice candidates', async (data: any) => {
@@ -407,9 +412,11 @@ const Home = () => {
 
             socket.on('disconnect room', (data: any) => {
                 delete window.socketPc[data.clientId];
-                if (window.socketPc['screenShare'])
-                    delete window.socketPc['screenShare'];
-
+                if (shared === 2) {
+                    if (window.socketPc['screenShare'])
+                        delete window.socketPc['screenShare'];
+                    setShared(0);
+                }
                 if (guestPC[0]) {
                     Store.addNotification({
                         message: `${guestPC[0]?.first_name} ${guestPC[0]?.last_name} left the Room`,
@@ -425,7 +432,6 @@ const Home = () => {
                     });
                 }
 
-                setShared(false);
                 setGuestPC([]);
             });
         } catch (error) {
@@ -443,7 +449,7 @@ const Home = () => {
             socket.off('room');
             socket.off('disconnect room');
         };
-    }, [myPc, guestPC, screenStream]);
+    }, [myPc, guestPC, screenStream, shared]);
 
     useEffect(() => {
         setMedia();
@@ -451,13 +457,15 @@ const Home = () => {
 
     return (
         <>
-            <Navbar  {...{ host: myPc, partner: guestPC[0], socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: number, type: string) => changeSetting(index, type)} />
+            <Navbar  {...{ host: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: number, type: string) => changeSetting(index, type)} />
             <main className='home'>
                 <div className="main">
                     <div className='main-board'>
                         <Video {...{ name: '', type: 'screen', }} />
                         {
-                            guestPC.length > 0 ? <Video {...{ name: guestPC[0].first_name, type: 'guest' }} /> : <></>
+                            guestPC.map((ele => (
+                                < Video key={ele.clientId} {...{ name: ele.first_name, type: 'guest' }} />
+                            )))
                         }
                         <Video {...{ name: 'You', type: 'host', }} onSwitchToggle={(index: boolean) => switchToggle(index)} />
                     </div>
