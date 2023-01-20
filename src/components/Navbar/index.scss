@@ -68,12 +68,12 @@ nav {
 
             >.badge {
                 position: absolute;
-                top: 0px;
-                right: 5px;
-                font-size: 19px;
-                font-weight: 800;
-                color: #ff460e;
-                animation: badge-animation 1s step-end infinite;
+                right: 7px;
+                top: 7px;
+                width: 8px;
+                height: 8px;
+                background-color: #ff3300;
+                border-radius: 50%;
             }
         }
 

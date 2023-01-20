@@ -292,7 +292,7 @@ const Navbar = (props: IProps) => {
                         <span onClick={() => changeActive('chat')}>
                             <BsFillChatRightDotsFill />
                             {
-                                badge ? <span className="badge" >!</span> : <></>
+                                badge ? <span className="badge" ></span> : <></>
                             }
                         </span>
                         <span onClick={() => props.screenSharing()} ><FaDesktop /></span>
