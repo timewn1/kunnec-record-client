@@ -11,6 +11,7 @@ type toggleFunction = (index: boolean) => void;
 interface IProps {
     name: string;
     type: string;
+    id?: string;
     onSwitchToggle?: toggleFunction;
 }
 
@@ -90,15 +91,15 @@ const Video = (props: IProps) => {
     }, []);
 
     return (
-        <div className="video-ele" id={`video-${props.type}`}>
+        <div className={`video-ele video-${props.type}`} id={`video-${props.id}`}>
             {
                 props.type === 'host' ?
-                    <video poster='image/spot_bg_mirror.png' autoPlay={true} muted className='videoElement mirror-mode v-cover' id={props.type} />
+                    <video poster='image/spot_bg_mirror.png' autoPlay={true} muted className={`videoElement mirror-mode v-cover ${props.type}`} id={props.type} />
                     :
-                    <video poster='image/spot_bg.png' autoPlay={true} className='videoElement v-cover' id={props.type} />
+                    <video poster='image/spot_bg.png' autoPlay={true} className={`videoElement v-cover ${props.type}`} id={props.type === 'screen' ? 'screen' : props.id} />
             }
             <div className="controller">
-                <div className='drag-over' data-ele={props.type}></div>
+                <div className='drag-over' data-ele={props.id}></div>
                 {
                     props.type === 'host' ? <>
                         <div className='toggle-btn' onClick={changeToggle}>

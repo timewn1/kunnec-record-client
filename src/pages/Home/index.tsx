@@ -31,6 +31,8 @@ const useWindowSize = () => {
     return size;
 }
 
+let guestUsers = [] as IPc[];
+
 const Home = () => {
     const [sId, setSId] = useState('');
     const [panel, setPanel] = useState(false);
@@ -179,8 +181,8 @@ const Home = () => {
 
             if (guestPC.length > 0)
                 socket.emit('screenShareStart', {
-                    sender: sId,
-                    room: room
+                    room: room,
+                    sender: sId
                 });
 
             screen.getVideoTracks()[0].addEventListener('ended', () => {
@@ -199,12 +201,13 @@ const Home = () => {
 
         if (guestPC.length > 0) {
             socket.emit('screenShareStop', {
-                room: room
+                room: room,
+                sender: sId
             })
         }
     }
 
-    const initNewUser = async (createOffer: boolean, isScreen: boolean, stream: MediaStream | null, videoElement: string, id: string, partnerName: string, cb: Function) => {
+    const initNewUser = async (createOffer: boolean, isScreen: boolean, stream: MediaStream | null, id: string, partnerName: string, cb: Function) => {
         try {
             let con = new RTCPeerConnection(h.getIceServer());
             cb(con);
@@ -219,10 +222,17 @@ const Home = () => {
                 });
             };
 
-            if (!isScreen || !createOffer) {
-                //add track
+            if (!isScreen) {
                 con.ontrack = (e) => {
-                    const elem = document.getElementById(videoElement) as any;
+                    const elem = document.getElementById(partnerName) as HTMLVideoElement;
+                    if (e.streams && e.streams[0]) {
+                        elem.srcObject = e.streams[0];
+                    }
+                };
+            }
+            else if (!createOffer) {
+                con.ontrack = (e) => {
+                    const elem = document.getElementById('screen') as HTMLVideoElement;
                     if (e.streams && e.streams[0]) {
                         elem.srcObject = e.streams[0];
                     }
@@ -255,9 +265,6 @@ const Home = () => {
                     h.setLocalStream(stream);
                     setMyStream(stream);
                 }
-                else {
-
-                }
             }
 
             //create offer
@@ -283,10 +290,9 @@ const Home = () => {
     useEffect(() => {
         const navHeight = document.getElementsByTagName('nav')[0].offsetHeight;
         const mainHeight = height - navHeight;
-
         h.adjustVideoSize(width, mainHeight, guestPC.length, panel, shared);
 
-    }, [width, height, guestPC, panel, shared]);
+    }, [width, height, guestPC.length, panel, shared]);
 
     useEffect(() => {
         try {
@@ -311,9 +317,10 @@ const Home = () => {
             socket.on('room', async (data: any) => {
                 const stream = await setMedia() as MediaStream;
 
-                setGuestPC([...guestPC, data.user]);
+                guestUsers.push(data.user);
+                setGuestPC(guestUsers);
 
-                await initNewUser(false, false, stream, 'guest', myId, data.socketId, (con) => window.socketPc[data.socketId] = con);
+                await initNewUser(false, false, stream, myId, data.socketId, (con) => window.socketPc[data.socketId] = con);
 
                 socket.emit('newUserStart', {
                     to: data.socketId,
@@ -339,30 +346,31 @@ const Home = () => {
             socket.on('newUserStart', async (data: any) => {
                 const stream = await setMedia() as MediaStream;
 
-                setGuestPC([...guestPC, data.user]);
+                guestUsers.push(data.user);
 
-                initNewUser(true, false, stream, 'guest', myId, data.sender, (con) => window.socketPc[data.sender] = con);
+                setGuestPC(guestUsers);
+
+                await initNewUser(true, false, stream, myId, data.sender, (con) => window.socketPc[data.sender] = con);
             });
 
             socket.on('screenShareStart', async (data: any) => {
-                await initNewUser(false, true, null, 'screen', myId, data.sender, (con) => window.socketPc['screenShare'] = con);
+                await initNewUser(false, true, null, myId, data.sender, (con) => window.socketPc[`screenShare-${data.sender}`] = con);
 
                 socket.emit('screenShareReady', {
                     to: data.sender,
                     sender: myId
                 });
-                console.log()
                 setShared(2);
             });
 
-            socket.on('screenShareReady', async (data: any) => {
-                initNewUser(true, true, screenStream, 'screen', myId, data.sender, (con) => window.socketPc['screenShare'] = con);
+            socket.on('screenShareReady', (data: any) => {
+                initNewUser(true, true, screenStream, myId, data.sender, (con) => window.socketPc[`screenShare-${data.sender}`] = con);
             });
 
-            socket.on('screenShareStop', () => {
-                if (window.socketPc['screenShare']) {
-                    window.socketPc['screenShare'] = null;
-                    delete window.socketPc['screenShare'];
+            socket.on('screenShareStop', (data) => {
+                if (window.socketPc[`screenShare-${data.sender}`]) {
+                    window.socketPc[`screenShare-${data.sender}`] = null;
+                    delete window.socketPc[`screenShare-${data.sender}`];
                 }
                 setShared(0);
             })
@@ -371,7 +379,7 @@ const Home = () => {
                 if (data.candidate) {
                     let key = '';
 
-                    if (data.isScreen) key = 'screenShare';
+                    if (data.isScreen) key = 'screenShare-' + data.sender;
                     else key = data.sender;
 
                     if (window.socketPc[key]) {
@@ -383,7 +391,7 @@ const Home = () => {
             socket.on('sdp', async (data: any) => {
                 let key = '';
 
-                if (data.isScreen) key = 'screenShare';
+                if (data.isScreen) key = 'screenShare-' + data.sender;
                 else key = data.sender;
 
                 if (window.socketPc[key]) {
@@ -411,15 +419,22 @@ const Home = () => {
             });
 
             socket.on('disconnect room', (data: any) => {
+                const _data = guestUsers.filter((ele: any) => ele.clientId !== data.clientId);
+                const deleted_user = guestUsers.filter((ele: IPc) => ele.clientId === data.clientId);
+
                 delete window.socketPc[data.clientId];
+
                 if (shared === 2) {
-                    if (window.socketPc['screenShare'])
-                        delete window.socketPc['screenShare'];
-                    setShared(0);
+                    if (window.socketPc[`screenShare-${data.clientId}`]) {
+                        window.socketPc[`screenShare-${data.clientId}`].close();
+                        delete window.socketPc[`screenShare-${data.clientId}`];
+                        setShared(0);
+                    }
                 }
-                if (guestPC[0]) {
+
+                if (deleted_user[0]) {
                     Store.addNotification({
-                        message: `${guestPC[0]?.first_name} ${guestPC[0]?.last_name} left the Room`,
+                        message: `${deleted_user[0]?.first_name} ${deleted_user[0]?.last_name} left the Room`,
                         type: "danger",
                         insert: "top",
                         container: "top-right",
@@ -432,7 +447,8 @@ const Home = () => {
                     });
                 }
 
-                setGuestPC([]);
+                guestUsers = _data;
+                setGuestPC(guestUsers);
             });
         } catch (error) {
             console.error('Socket connect error = ', error);
@@ -449,7 +465,7 @@ const Home = () => {
             socket.off('room');
             socket.off('disconnect room');
         };
-    }, [myPc, guestPC, screenStream, shared]);
+    }, [myPc, guestPC.length, screenStream, shared]);
 
     useEffect(() => {
         setMedia();
@@ -461,13 +477,13 @@ const Home = () => {
             <main className='home'>
                 <div className="main">
                     <div className='main-board'>
-                        <Video {...{ name: '', type: 'screen', }} />
+                        <Video {...{ name: '', type: 'screen', id: 'screenShare' }} />
                         {
                             guestPC.map((ele => (
-                                < Video key={ele.clientId} {...{ name: ele.first_name, type: 'guest' }} />
+                                <Video key={ele.clientId} {...{ name: ele.first_name, type: 'guest', id: ele.clientId }} />
                             )))
                         }
-                        <Video {...{ name: 'You', type: 'host', }} onSwitchToggle={(index: boolean) => switchToggle(index)} />
+                        <Video {...{ name: 'You', type: 'host', id: myPc?.clientId }} onSwitchToggle={(index: boolean) => switchToggle(index)} />
                     </div>
                 </div>
             </main>

@@ -80,9 +80,9 @@ export default {
         let elements = [];
         const min_separate = 10;
 
-        const hostElement = document.getElementById('video-host');
-        const guestElement = document.getElementById('video-guest');
-        const screenElement = document.getElementById('video-screen');
+        const hostElement = document.getElementsByClassName('video-host')[0];
+        const guestElement = document.getElementsByClassName('video-guest');
+        const screenElement = document.getElementsByClassName('video-screen')[0];
         const screenVideoElement = document.getElementById('screen');
 
         if (shared) {
@@ -93,7 +93,8 @@ export default {
             screenElement.style.display = 'none';
         }
 
-        if (guest > 0) elements.push(guestElement);
+        for (let i = 0; i < guestElement.length; i++)
+            elements.push(guestElement[i]);
         elements.push(hostElement);
 
         const count = elements.length;
@@ -111,9 +112,10 @@ export default {
         }
 
         if (!panel) {
-            let modalWidth = width / 6;
+            let modalWidth = width / 4;
 
-            if (modalWidth < 240) modalWidth = 240;
+            if (modalWidth < 160) modalWidth = 160;
+            if (modalWidth > 350) modalWidth = 350;
 
             if (shared) {
                 screenElement.style.width = width + 'px';
@@ -127,25 +129,94 @@ export default {
                 screenVideoElement.style.maxWidth = width + 'px';
                 screenVideoElement.style.maxHeight = height + 'px';
 
-                if (guest > 0) {
-                    guestElement.style.width = modalWidth + 'px';
-                    guestElement.style.height = modalWidth * 5 / 8 + 'px';
-                    guestElement.style.top = height / 20 + 'px';
-                    guestElement.style.left = width - 30 - modalWidth + 'px';
-                    guestElement.style.border = '1px solid #328132';
-                    guestElement.style.overflow = 'hidden';
-                    guestElement.childNodes[1].childNodes[0].classList.add('dragable');
+                for (let i = 0; i < guestElement.length; i++) {
+                    guestElement[i].style.width = modalWidth + 'px';
+                    guestElement[i].style.height = modalWidth * 5 / 8 + 'px';
+                    guestElement[i].style.top = height / 20 + (modalWidth * 5 / 8 + height / 20) * i + 'px';
+                    guestElement[i].style.left = width - 30 - modalWidth + 'px';
+                    guestElement[i].style.border = '1px solid #328132';
+                    guestElement[i].style.overflow = 'hidden';
+                    guestElement[i].childNodes[1].childNodes[0].classList.add('dragable');
                 }
             }
             else {
-                if (guest > 0) {
-                    guestElement.style.width = width + 'px';
-                    guestElement.style.height = height + 'px';
-                    guestElement.style.top = '0px';
-                    guestElement.style.left = '0px';
-                    guestElement.style.border = 'none';
-                    guestElement.style.overflow = 'visible';
-                    guestElement.childNodes[1].childNodes[0].classList.remove('dragable');
+                if (guestElement.length === 1) {
+                    guestElement[0].style.width = width + 'px';
+                    guestElement[0].style.height = height + 'px';
+                    guestElement[0].style.top = '0px';
+                    guestElement[0].style.left = '0px';
+                    guestElement[0].style.border = 'none';
+                    guestElement[0].style.overflow = 'visible';
+                    guestElement[0].childNodes[1].childNodes[0].classList.remove('dragable');
+                }
+                else {
+                    let rest_space_min = width * height,
+                        suitable_widthcount = 0,
+                        suitable_heightcount = 0,
+                        count = guestElement.length;
+
+                    for (let i = 1; i <= count; i++) {
+                        let widthcount, heightcount = i;
+                        if (count % i === 0)
+                            widthcount = parseInt(count / i);
+                        else
+                            widthcount = parseInt(count / i) + 1;
+
+                        let cell_width = width / widthcount;
+                        let cell_height = height / heightcount;
+                        let width_height = cell_width > cell_height ? cell_height : cell_width;
+                        let rest_space = width * height - count * width_height * width_height;
+
+                        if (rest_space < rest_space_min) {
+                            rest_space_min = rest_space;
+                            suitable_heightcount = heightcount;
+                            suitable_widthcount = widthcount;
+                        }
+                    }
+
+                    let realTotalWidth = width - min_separate * (suitable_widthcount + 1),
+                        realTotalHeight = height - min_separate * (suitable_heightcount + 1),
+                        diffWidth = 0,
+                        diffHeight = 0,
+                        realWidth = realTotalWidth / suitable_widthcount,
+                        realHeight = realTotalHeight / suitable_heightcount;
+
+                    if (realWidth > realHeight * 8 / 5) {
+                        diffWidth = realWidth * suitable_widthcount - realHeight * suitable_widthcount * 8 / 5;
+                        realWidth = realHeight * 8 / 5;
+                    }
+                    else if (realHeight > realWidth * 5 / 8) {
+                        diffHeight = realHeight * suitable_heightcount - realWidth * suitable_heightcount * 5 / 8;
+                        realHeight = realWidth * 5 / 8;
+                    }
+
+                    if (shared) {
+                        screenVideoElement.style.maxWidth = realWidth + 'px';
+                        screenVideoElement.style.maxHeight = realHeight + 'px';
+                    }
+
+                    for (let i = 0; i < suitable_heightcount; i++) {
+                        for (let j = 0; j < suitable_widthcount; j++) {
+                            const index = suitable_widthcount * i + j;
+
+                            if (index >= count) return;
+
+                            let top = (i + 1) * min_separate + diffHeight / 2 + realHeight * i;
+                            let left = (j + 1) * min_separate + diffWidth / 2 + realWidth * j;
+
+                            if (i === (suitable_heightcount - 1) && suitable_heightcount * suitable_widthcount > count) {
+                                left = left + (suitable_heightcount * suitable_widthcount - count) * (realWidth + min_separate) / 2;
+                            }
+
+                            elements[index].style.width = realWidth + 'px';
+                            elements[index].style.height = realHeight + 'px';
+                            elements[index].style.top = top + 'px';
+                            elements[index].style.left = left + 'px';
+                            elements[index].style.overflow = 'hidden';
+                            elements[index].style.border = '1px solid #328132';
+                            elements[index].childNodes[1].childNodes[0].classList.remove('dragable');
+                        }
+                    }
                 }
             }
 
@@ -165,7 +236,7 @@ export default {
 
             for (let i = 1; i <= count; i++) {
                 let widthcount, heightcount = i;
-                if (count % i == 0)
+                if (count % i === 0)
                     widthcount = parseInt(count / i);
                 else
                     widthcount = parseInt(count / i) + 1;
