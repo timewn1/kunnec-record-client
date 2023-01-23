@@ -150,13 +150,13 @@ const Navbar = (props: IProps) => {
                             setChatList([...chatList, data]);
                         } else {
                             Store.addNotification({
-                                title: "Failed!",
-                                message: `File transfer is failed`,
-                                type: "danger",
-                                insert: "top",
-                                container: "top-right",
-                                animationIn: ["animate__animated", "animate__fadeIn"],
-                                animationOut: ["animate__animated", "animate__fadeOut"],
+                                title: 'Failed!',
+                                message: 'File transfer is failed',
+                                type: 'danger',
+                                insert: 'top',
+                                container: 'top-right',
+                                animationIn: ['animate__animated', 'animate__fadeIn'],
+                                animationOut: ['animate__animated', 'animate__fadeOut'],
                                 dismiss: {
                                     duration: 2000,
                                     onScreen: true
@@ -210,7 +210,7 @@ const Navbar = (props: IProps) => {
     const uploadFile = () => {
         if (fileRef.current && fileRef.current.files) {
             if (fileRef.current.files[0].size > 104856700) {
-                alert("File is too big!");
+                alert('File is too big!');
                 fileRef.current.value = '';
                 return;
             }
@@ -279,12 +279,12 @@ const Navbar = (props: IProps) => {
     return (
         <>
             <nav>
-                <img src='image/logo.png' alt="logo" />
+                <img src="image/logo.png" alt="logo" />
                 <div>
                     <div className="x-code">
                         <div>
                             <img src={Utills.urlString(props.host?.image)} alt="user" />
-                            <span className='spot-name'>{props.host?.username} session</span>
+                            <span className="spot-name">{props.host?.username} session</span>
                         </div>
                         <p>{Utills.convertTrackingTime(time)}</p>
                     </div>
@@ -301,10 +301,10 @@ const Navbar = (props: IProps) => {
                         <span onClick={() => changeActive('setting')}><FaCog /></span>
                         {/* <span onClick={recording}><BsRecordCircle /></span> */}
                     </div>
-                    <button className='active exit-btn' onClick={() => changeActive('exit')}>Exit&nbsp;Session</button>
+                    <button className="active exit-btn" onClick={() => changeActive('exit')}>Exit&nbsp;Session</button>
                 </div>
             </nav>
-            <div className={`modal left ${activeButton.chat ? "show" : ''}`} onClick={() => setBadge(false)}>
+            <div className={`modal left ${activeButton.chat ? "show" : ""}`} onClick={() => setBadge(false)}>
                 <div className="modal-content">
                     <div className="modal-header">
                         <span onClick={() => { changeActive('chat') }}><BsXLg /></span>
@@ -319,15 +319,15 @@ const Navbar = (props: IProps) => {
                         </div>
                         <div ref={messagesEndRef}></div>
                     </div>
-                    <div className='modal-footer'>
+                    <div className="modal-footer">
                         <textarea
-                            className='chat-box'
-                            placeholder='Type a message'
+                            className="chat-box"
+                            placeholder="Type a message"
                             ref={chatRef}
                             value={chatText}
                             onChange={(e) => changeText(e)}
                             onKeyDown={(e) => {
-                                if (e.key == "Enter" && !e.shiftKey) {
+                                if (e.key == 'Enter' && !e.shiftKey) {
                                     sendMessage();
                                     e.preventDefault();
                                 }
@@ -343,9 +343,9 @@ const Navbar = (props: IProps) => {
                                     </span>
                             }
                         </div>
-                        <span className='chat-send-btn' onClick={() => sendMessage()}><BiSend /></span>
+                        <span className="chat-send-btn" onClick={() => sendMessage()}><BiSend /></span>
                         <span onClick={() => { fileRef.current?.click(); }}><ImAttachment /></span>
-                        <input type='file' ref={fileRef} onChange={() => uploadFile()} />
+                        <input type="file" ref={fileRef} onChange={() => uploadFile()} />
                     </div>
                 </div>
             </div>
@@ -353,15 +353,15 @@ const Navbar = (props: IProps) => {
                 <div className="modal-content">
                     <div className="modal-footer">
                         <h1>Do you want to exit this session?</h1>
-                        <div className='btn-group'>
-                            <button className='active' onClick={() => window.location.href = 'https://kunnec.com/public/k_screen/recording/record_details'}>Yes</button>
+                        <div className="btn-group">
+                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/public/k_screen/recording/record_details'}>Yes</button>
                             <button onClick={() => changeActive('exit')}>No</button>
                         </div>
                     </div>
                 </div>
             </div>
             <div className={`modal right ${activeButton.setting ? "show" : ''}`}>
-                <div className='overlay' onClick={() => changeActive('setting')}></div>
+                <div className="overlay" onClick={() => changeActive('setting')}></div>
                 <div className="modal-content">
                     <div className="modal-body">
                         <h1>Settings</h1>

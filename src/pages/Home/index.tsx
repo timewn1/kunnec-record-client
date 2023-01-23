@@ -11,8 +11,8 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-// const ENDPOINT = "https://record.kunnec.com/stream";
-const ENDPOINT = "http://localhost:3001/stream";
+const ENDPOINT = 'https://record.kunnec.com/stream';
+// const ENDPOINT = "http://localhost:3001/stream";
 
 const socket = socketIOClient(ENDPOINT);
 
@@ -119,33 +119,33 @@ const Home = () => {
     }
 
     const getUserAuth = async () => {
-        // const res = await fetch('https://kunnec.com/api/get-info');
-        // const json = await res.json();
-        // const auth = json.authorization;
+        const res = await fetch('https://kunnec.com/api/get-info');
+        const json = await res.json();
+        const auth = json.authorization;
 
-        // if (auth === 'fail') {
-        //     window.location.href = '/public/login';
-        // }
-
-        // const u = {
-        //     clientId: sId,
-        //     id: auth['id'],
-        //     first_name: auth['first_name'],
-        //     last_name: auth['last_name'],
-        //     username: auth['username'],
-        //     gender: auth['gender'],
-        //     image: auth['image'],
-        // }
+        if (auth === 'fail') {
+            window.location.href = '/public/login';
+        }
 
         const u = {
-            clientId: 'clientId',
-            id: 0,
-            first_name: 'Calor',
-            last_name: 'Brown',
-            username: 'Calor',
-            gender: 0,
-            image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
+            clientId: sId,
+            id: auth['id'],
+            first_name: auth['first_name'],
+            last_name: auth['last_name'],
+            username: auth['username'],
+            gender: auth['gender'],
+            image: auth['image'],
         }
+
+        // const u = {
+        //     clientId: 'clientId',
+        //     id: 0,
+        //     first_name: 'Calor',
+        //     last_name: 'Brown',
+        //     username: 'Calor',
+        //     gender: 0,
+        //     image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
+        // }
 
         return u;
     }
@@ -157,13 +157,12 @@ const Home = () => {
     const screenSharingStart = async () => {
         if (shared) {
             Store.addNotification({
-                title: "Warning!",
-                message: `Already shared a screen.`,
-                type: "danger",
-                insert: "top",
-                container: "top-right",
-                animationIn: ["animate__animated", "animate__fadeIn"],
-                animationOut: ["animate__animated", "animate__fadeOut"],
+                message: 'Already shared a screen.',
+                type: 'danger',
+                insert: 'top',
+                container: 'top-right',
+                animationIn: ['animate__animated', 'animate__fadeIn'],
+                animationOut: ['animate__animated', 'animate__fadeOut'],
                 dismiss: {
                     duration: 2000,
                     onScreen: true
@@ -251,7 +250,7 @@ const Home = () => {
             con.onsignalingstatechange = (d) => {
                 switch (con.signalingState) {
                     case 'closed':
-                        alert("Signalling state is 'closed'");
+                        alert('Signalling state is "closed"');
                         break;
                 }
             };
@@ -329,13 +328,12 @@ const Home = () => {
                 });
 
                 Store.addNotification({
-                    title: "Info!",
                     message: `${data.user.first_name} ${data.user.last_name} joined the Room`,
-                    type: "info",
-                    insert: "top",
-                    container: "top-right",
-                    animationIn: ["animate__animated", "animate__fadeIn"],
-                    animationOut: ["animate__animated", "animate__fadeOut"],
+                    type: 'info',
+                    insert: 'top',
+                    container: 'top-right',
+                    animationIn: ['animate__animated', 'animate__fadeIn'],
+                    animationOut: ['animate__animated', 'animate__fadeOut'],
                     dismiss: {
                         duration: 2000,
                         onScreen: true
@@ -435,11 +433,11 @@ const Home = () => {
                 if (deleted_user[0]) {
                     Store.addNotification({
                         message: `${deleted_user[0]?.first_name} ${deleted_user[0]?.last_name} left the Room`,
-                        type: "danger",
-                        insert: "top",
-                        container: "top-right",
-                        animationIn: ["animate__animated", "animate__fadeIn"],
-                        animationOut: ["animate__animated", "animate__fadeOut"],
+                        type: 'danger',
+                        insert: 'top',
+                        container: 'top-right',
+                        animationIn: ['animate__animated', 'animate__fadeIn'],
+                        animationOut: ['animate__animated', 'animate__fadeOut'],
                         dismiss: {
                             duration: 2000,
                             onScreen: true
@@ -474,9 +472,9 @@ const Home = () => {
     return (
         <>
             <Navbar  {...{ host: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: number, type: string) => changeSetting(index, type)} />
-            <main className='home'>
+            <main className="home">
                 <div className="main">
-                    <div className='main-board'>
+                    <div className="main-board">
                         <Video {...{ name: '', type: 'screen', id: 'screenShare' }} />
                         {
                             guestPC.map((ele => (
