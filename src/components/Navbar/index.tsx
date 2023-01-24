@@ -27,7 +27,7 @@ import './index.scss';
 
 
 type toggleFunction = (type: string) => void;
-type onSettingFunction = (index: number, type: string) => void;
+type onSettingFunction = (index: string, type: string) => void;
 type screenSharingFunction = () => void;
 
 interface IProps {
@@ -45,9 +45,12 @@ const Navbar = (props: IProps) => {
     const [chatText, setChatText] = useState<string>('');
     const [fileName, setFileName] = useState<string>('');
     const [chatList, setChatList] = useState<IMessage[]>([]);
-    const [videoList, setVideoList] = useState<any[]>([]);
     const [uploading, setUploading] = useState<boolean>(false);
-    const [inputAudioList, setInputAudioList] = useState<any[]>([]);
+
+    const [videoList, setVideoList] = useState<any[]>([]);
+    const [audioInputList, setAudioInputList] = useState<any[]>([]);
+    const [audioOutputList, setAudioOutputList] = useState<any[]>([]);
+
     const [activeButton, setActiveButton] = useState<IActive>(
         {
             exit: false,
@@ -88,7 +91,8 @@ const Navbar = (props: IProps) => {
         const _audioOutputList = devices.filter(device => device.kind === 'audiooutput');
 
         setVideoList(_videoList);
-        setInputAudioList(_audioInputList);
+        setAudioInputList(_audioInputList);
+        setAudioOutputList(_audioOutputList);
     }
 
     const selectOption = (type: string, e: any) => {
@@ -376,7 +380,15 @@ const Navbar = (props: IProps) => {
                         <p>Microphone</p>
                         <select onChange={(e) => selectOption('audioInput', e)}>
                             {
-                                inputAudioList.map((ele) => (
+                                audioInputList.map((ele) => (
+                                    <option key={ele.deviceId} value={ele.deviceId}>{ele.label}</option>
+                                ))
+                            }
+                        </select>
+                        <p>Speaker</p>
+                        <select onChange={(e) => selectOption('audioOutput', e)}>
+                            {
+                                audioOutputList.map((ele) => (
                                     <option key={ele.deviceId} value={ele.deviceId}>{ele.label}</option>
                                 ))
                             }

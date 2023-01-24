@@ -43,6 +43,7 @@ const Home = () => {
 
     const [myStream, setMyStream] = useState<any>();
     const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
+    const [audioOutput, setAudioOutput] = useState<string>('');
     const [setting, setSetting] = useState<ISetting>({
         video: '',
         audioInput: ''
@@ -100,9 +101,13 @@ const Home = () => {
         }
     }
 
-    const changeSetting = async (index: number, type: string) => {
+    const changeSetting = async (value: string, type: string) => {
+        if (type === 'audioOutput') {
+            setAudioOutput(value);
+            return;
+        }
         let _setting = { ...setting };
-        _setting[type] = index;
+        _setting[type] = value;
 
         const stream = await h.getUserFullMedia(_setting);
         if (stream) {
@@ -287,9 +292,18 @@ const Home = () => {
     }
 
     useEffect(() => {
+        setMedia();
+    }, [])
+
+    useEffect(() => {
+        if (audioOutput !== '')
+            h.switchSpeaker(audioOutput);
+    }, [audioOutput, guestPC])
+
+    useEffect(() => {
         const navHeight = document.getElementsByTagName('nav')[0].offsetHeight;
         const mainHeight = height - navHeight;
-        h.adjustVideoSize(width, mainHeight, guestPC.length, panel, shared);
+        h.adjustVideoSize(width, mainHeight, panel, shared);
 
     }, [width, height, guestPC.length, panel, shared]);
 
@@ -465,13 +479,9 @@ const Home = () => {
         };
     }, [myPc, guestPC.length, screenStream, shared]);
 
-    useEffect(() => {
-        setMedia();
-    }, [])
-
     return (
         <>
-            <Navbar  {...{ host: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: number, type: string) => changeSetting(index, type)} />
+            <Navbar  {...{ host: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: string, type: string) => changeSetting(index, type)} />
             <main className="home">
                 <div className="main">
                     <div className="main-board">

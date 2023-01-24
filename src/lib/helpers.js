@@ -60,6 +60,28 @@ export default {
             screenElement.srcObject = stream;
     },
 
+    async switchSpeaker(value) {
+        const videoElements = document.getElementsByTagName('video');
+        try {
+            for (let i = 0; i < videoElements.length; i++) {
+                if (typeof videoElements[i].sinkId !== 'undefined') {
+                    await videoElements[i].setSinkId(value);
+                    console.log(`Success, audio output device attached: ${value}`);
+                }
+                else {
+                    console.warn('Browser does not support output device selection.');
+                }
+            }
+        }
+        catch (error) {
+            let errorMessage = error;
+            if (error.name === 'SecurityError') {
+                errorMessage = `You need to use HTTPS for selecting audio output device: ${error}`;
+            }
+            console.error(errorMessage);
+        };
+    },
+
     async screenSharing() {
         try {
             const options = { audio: false, video: true };
@@ -76,7 +98,7 @@ export default {
         }
     },
 
-    adjustVideoSize(width, height, guest, panel, shared) {
+    adjustVideoSize(width, height, panel, shared) {
         let elements = [];
         const min_separate = 10;
 
