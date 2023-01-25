@@ -298,7 +298,7 @@ const Home = () => {
     useEffect(() => {
         if (audioOutput !== '')
             h.switchSpeaker(audioOutput);
-    }, [audioOutput, guestPC])
+    }, [audioOutput, guestPC.length])
 
     useEffect(() => {
         const navHeight = document.getElementsByTagName('nav')[0].offsetHeight;
