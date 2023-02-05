@@ -76,8 +76,7 @@ const Home = () => {
             for (let p in window.socketPc) {
                 let pName = window.socketPc[p];
 
-                if (p === 'screenShare') continue;
-                if (typeof pName === 'object') {
+                if (p.indexOf('screenShare') === -1 && typeof pName === 'object') {
                     h.replaceTrack(track, pName);
                 }
             }
