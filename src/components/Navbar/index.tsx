@@ -19,7 +19,7 @@ import { ImAttachment } from 'react-icons/im';
 
 import Utills from '../../lib/utills.js';
 
-import { IPc, IActive, IMessage } from '../../type';
+import { IPc, IActive, IMessage, IHost } from '../../type';
 
 import { ChatElement } from '../ChatElement';
 
@@ -34,7 +34,8 @@ interface IProps {
     onToggle: toggleFunction;
     screenSharing: screenSharingFunction;
     onSetting: onSettingFunction;
-    host: IPc | null;
+    host: IHost | null;
+    myPc: IPc | null;
     partner: IPc[];
     socket: any;
 }
@@ -126,7 +127,7 @@ const Navbar = (props: IProps) => {
                         time: new Date(),
                         isFile: true,
                         content: fileName,
-                        user_id: props.host.clientId,
+                        user_id: props.myPc?.clientId,
                         userName: props.host.username,
                         uploadedName: uploadedName,
                     }
@@ -182,7 +183,7 @@ const Navbar = (props: IProps) => {
                 const data = {
                     time: new Date(),
                     content: chatText,
-                    user_id: props.host.clientId,
+                    user_id: props.myPc?.clientId,
                     userName: props.host.username,
                     isFile: false,
                 }
@@ -213,6 +214,7 @@ const Navbar = (props: IProps) => {
 
     const uploadFile = () => {
         if (fileRef.current && fileRef.current.files) {
+            // MAX size 100MB
             if (fileRef.current.files[0].size > 104856700) {
                 alert('File is too big!');
                 fileRef.current.value = '';
@@ -287,7 +289,7 @@ const Navbar = (props: IProps) => {
                 <div>
                     <div className="x-code">
                         <div>
-                            <img src={Utills.urlString(props.host?.image)} alt="user" />
+                            <img src={props.host?.image} alt="user" />
                             <span className="spot-name">{props.host?.username} session</span>
                         </div>
                         <p>{Utills.convertTrackingTime(time)}</p>
@@ -317,7 +319,7 @@ const Navbar = (props: IProps) => {
                         <div>
                             {
                                 chatList.map((ele, index) => (
-                                    <ChatElement key={index} {...{ data: ele, myId: props.host?.clientId + '' }} />
+                                    <ChatElement key={index} {...{ data: ele, myId: props.myPc?.clientId + '' }} />
                                 ))
                             }
                         </div>
@@ -358,7 +360,7 @@ const Navbar = (props: IProps) => {
                     <div className="modal-footer">
                         <h1>Do you want to exit this session?</h1>
                         <div className="btn-group">
-                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/public/k_screen/recording/record_details'}>Yes</button>
+                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}>Yes</button>
                             <button onClick={() => changeActive('exit')}>No</button>
                         </div>
                     </div>

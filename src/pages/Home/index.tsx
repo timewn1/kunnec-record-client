@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Store } from 'react-notifications-component';
 
-import { IPc, ISetting, IToggle } from '../../type/index.js';
+import { IHost, IPc, IRecorder, ISetting, IToggle, IUser } from '../../type/index.js';
 
 import h from '../../lib/helpers.js';
 
@@ -11,8 +11,8 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-const ENDPOINT = 'https://record.kunnec.com/stream';
-// const ENDPOINT = "http://localhost:3001/stream";
+// const ENDPOINT = 'https://record.kunnec.com/stream';
+const ENDPOINT = "http://localhost:3001/stream";
 
 const socket = socketIOClient(ENDPOINT);
 
@@ -37,9 +37,12 @@ const Home = () => {
     const [sId, setSId] = useState('');
     const [panel, setPanel] = useState(false);
     const [shared, setShared] = useState(0);
+    const [showModal, setShowModal] = useState(false);
 
+    const [host, setHost] = useState<IHost | null>(null);
     const [myPc, setMyPc] = useState<IPc | null>(null);
     const [guestPC, setGuestPC] = useState<IPc[]>([]);
+    const [recorder, setRecorder] = useState<IRecorder | null>(null);
 
     const [myStream, setMyStream] = useState<any>();
     const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
@@ -54,6 +57,8 @@ const Home = () => {
     });
 
     const room = window.location.hash.split('#')[1];
+    const recorderId = room.split('-')[2];
+
     const [width, height] = useWindowSize();
 
     const setMedia = async () => {
@@ -123,35 +128,70 @@ const Home = () => {
     }
 
     const getUserAuth = async () => {
-        const res = await fetch('https://kunnec.com/api/get-info');
+        const res = await fetch('http://localhost/api/get-recorder', {
+            mode: 'cors',
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                recorderId: recorderId
+            })
+        });
+
         const json = await res.json();
-        const auth = json.authorization;
+        console.log('res = ', json);
 
-        if (auth === 'fail') {
-            window.location.href = '/public/login';
+        if (json.status === 'fail') {
+            Store.addNotification({
+                message: json.message,
+                type: 'danger',
+                insert: 'top',
+                container: 'top-right',
+                animationIn: ['animate__animated', 'animate__fadeIn'],
+                animationOut: ['animate__animated', 'animate__fadeOut'],
+                dismiss: {
+                    duration: 2000,
+                    onScreen: true
+                }
+            });
+
+            window.setTimeout(() => {
+                window.location.href = 'http://localhost/dashboard';
+                // window.location.href = 'https://kunnec.com/dashboard';
+            }, 2000)
         }
+        else {
+            const _host = {
+                id: json.host.id,
+                username: json.host.username,
+                image: json.host.image
+            }
 
-        const u = {
-            clientId: sId,
-            id: auth['id'],
-            first_name: auth['first_name'],
-            last_name: auth['last_name'],
-            username: auth['username'],
-            gender: auth['gender'],
-            image: auth['image'],
+            const _auth = {
+                id: json.authorization['id'],
+                first_name: json.authorization['first_name'],
+                last_name: json.authorization['last_name'],
+                username: json.authorization['username'],
+                gender: json.authorization['gender'],
+                image: json.authorization['image'],
+            };
+
+            const _recorder = {
+                id: recorderId,
+                fee: json.recorder.fee,
+                feeType: json.recorder.fee_type
+            }
+
+            setShowModal(true);
+            if (_host.id !== _auth.id) {
+            }
+
+            setHost(_host);
+            setRecorder(_recorder);
+
+            return _auth;
         }
-
-        // const u = {
-        //     clientId: 'clientId',
-        //     id: 0,
-        //     first_name: 'Calor',
-        //     last_name: 'Brown',
-        //     username: 'Calor',
-        //     gender: 0,
-        //     image: 'https://kunnec.com/user-dash/images/users/profiles/1671974293_image.jpeg',
-        // }
-
-        return u;
     }
 
     const switchToggle = (index: boolean) => {
@@ -308,16 +348,16 @@ const Home = () => {
 
     useEffect(() => {
         try {
-            const myId = socket.io.engine.id;
+            const myId = socket.io.engine.id as string;
 
             socket.on('connect', async () => {
-                const myId = socket.io.engine.id;
+                const myId = socket.io.engine.id as string;
                 console.log('socket Id = ', myId);
 
                 const _myPc = await getUserAuth();
 
                 setSId(myId);
-                setMyPc({ ..._myPc, clientId: myId });
+                if (_myPc) setMyPc({ ..._myPc, clientId: myId });
 
                 socket.emit('subscribe', {
                     room: room,
@@ -480,7 +520,7 @@ const Home = () => {
 
     return (
         <>
-            <Navbar  {...{ host: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: string, type: string) => changeSetting(index, type)} />
+            <Navbar  {...{ host: host, myPc: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: string, type: string) => changeSetting(index, type)} />
             <main className="home">
                 <div className="main">
                     <div className="main-board">
@@ -494,6 +534,17 @@ const Home = () => {
                     </div>
                 </div>
             </main>
+            <div className={`modal center ${showModal ? "show" : ''}`}>
+                <div className="modal-content">
+                    <div className="modal-footer">
+                        <h1>Do you want to exit this session?</h1>
+                        <div className="btn-group">
+                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}>Yes</button>
+                            <button onClick={() => { window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}` }}>Exit Session</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </>
     )
 }
