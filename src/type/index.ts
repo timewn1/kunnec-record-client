@@ -1,3 +1,15 @@
+export interface IHost {
+    id: number;
+    username: string;
+    image: string;
+}
+
+export interface IRecorder {
+    id: string;
+    fee: number;
+    feeType: string;
+}
+
 export interface IUser {
     id: number;
     first_name: string;
@@ -37,7 +49,7 @@ export interface IMessage {
     time: Date,
     isFile: boolean,
     content: string,
-    user_id: string,
+    user_id: string | undefined,
     userName: string,
     uploadedName?: string,
 }
