@@ -338,10 +338,17 @@ button {
   &.center {
     z-index: 100;
 
+    .overlay {
+      top: -100vh;
+      transition-property: opacity, top;
+      transition-duration: 0, 0.3s;
+    }
+
     .modal-content {
-      width: 400px;
-      max-width: 100vw;
-      height: 230px;
+      max-width: 400px;
+      width: 90%;
+      // max-width: 100vw;
+      max-height: 300px;
       left: 50%;
       top: -100vh;
       transform: translateX(-50%);
@@ -363,24 +370,41 @@ button {
           }
         }
 
-        .btn-group {
-          text-align: right;
+        .payment-group {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          width: 100%;
+          max-width: 100vw;
+          gap: 10px;
 
           button {
             background-color: white;
-            color: var(--green);
+            color: var(--grey-dark);
             margin-left: 15px;
+            width: 80%;
+            font-size: 1.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+
+            svg {
+              font-size: 1.5em;
+            }
 
             &:hover {
               background-color: rgb(230, 230, 230);
             }
 
-            &.active {
-              background-color: var(--green);
+            &.exit-btn {
+              margin-top: 10px;
+              background-color: var(--danger);
               color: white;
+              border: none;
 
               &:hover {
-                background-color: #49d486;
+                background-color: var(--danger-hover);
               }
             }
           }
@@ -390,6 +414,11 @@ button {
     }
 
     &.show {
+      .overlay {
+        top: 0;
+        opacity: 1;
+      }
+
       .modal-content {
         top: 5em;
         opacity: 1;

@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useState } from 'react';
 import { Store } from 'react-notifications-component';
+import { FaCcPaypal, FaCcStripe } from "react-icons/fa";
 
 import { IHost, IPc, IRecorder, ISetting, IToggle, IUser } from '../../type/index.js';
 
@@ -535,12 +536,14 @@ const Home = () => {
                 </div>
             </main>
             <div className={`modal center ${showModal ? "show" : ''}`}>
+                <div className="overlay"></div>
                 <div className="modal-content">
                     <div className="modal-footer">
-                        <h1>Do you want to exit this session?</h1>
-                        <div className="btn-group">
-                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}>Yes</button>
-                            <button onClick={() => { window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}` }}>Exit Session</button>
+                        {/* <h1>Please make payment to continue.</h1> */}
+                        <div className="payment-group">
+                            <button className="" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}><FaCcPaypal /> Paypal</button>
+                            <button className="" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}><FaCcStripe /> Stripe</button>
+                            <button className="exit-btn" onClick={() => { window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}` }}>Exit Session</button>
                         </div>
                     </div>
                 </div>
