@@ -376,7 +376,7 @@ button {
           align-items: center;
           width: 100%;
           max-width: 100vw;
-          gap: 10px;
+          gap: 15px;
 
           button {
             background-color: white;
@@ -387,10 +387,10 @@ button {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            height: 55px;
 
-            svg {
-              font-size: 1.5em;
+            img {
+              width: 50%;
             }
 
             &:hover {
@@ -399,12 +399,12 @@ button {
 
             &.exit-btn {
               margin-top: 10px;
-              background-color: var(--danger);
-              color: white;
-              border: none;
+              color: var(--grey-dark);
+              border: 1px solid var(--danger);
 
               &:hover {
                 background-color: var(--danger-hover);
+                color: var(--white);
               }
             }
           }

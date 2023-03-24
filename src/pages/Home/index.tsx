@@ -129,6 +129,7 @@ const Home = () => {
     }
 
     const getUserAuth = async () => {
+        // const res = await fetch('https://kunnec.com/api/get-recorder', {
         const res = await fetch('http://localhost/api/get-recorder', {
             mode: 'cors',
             method: 'POST',
@@ -184,9 +185,9 @@ const Home = () => {
                 feeType: json.recorder.fee_type
             }
 
+            // if (_host.id !== _auth.id) {
             setShowModal(true);
-            if (_host.id !== _auth.id) {
-            }
+            // }
 
             setHost(_host);
             setRecorder(_recorder);
@@ -249,6 +250,23 @@ const Home = () => {
                 sender: sId
             })
         }
+    }
+
+    const paypalPay = async () => {
+        // const res = await fetch({
+        //     method: "POST",
+        //     url: "http://localhost:3001/buy-with-paypal",
+        //     // url: "https://kunnec.com/buy-with-paypal",
+        //     params: {
+        //         user: state.user.id
+        //     }
+        // }).then(res => {
+
+        // })
+    }
+
+    const stripePay = () => {
+
     }
 
     const initNewUser = async (createOffer: boolean, isScreen: boolean, stream: MediaStream | null, id: string, partnerName: string, cb: Function) => {
@@ -541,8 +559,8 @@ const Home = () => {
                     <div className="modal-footer">
                         {/* <h1>Please make payment to continue.</h1> */}
                         <div className="payment-group">
-                            <button className="" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}><FaCcPaypal /> Paypal</button>
-                            <button className="" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}><FaCcStripe /> Stripe</button>
+                            <button className="" onClick={paypalPay}><img src="image/paypal.png" alt="paypal" /></button>
+                            <button className="" onClick={stripePay}><img src="image/stripe.png" alt="stripe" /></button>
                             <button className="exit-btn" onClick={() => { window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}` }}>Exit Session</button>
                         </div>
                     </div>
