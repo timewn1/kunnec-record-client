@@ -7,8 +7,14 @@ export default {
     },
 
     urlString: (url) => {
-        if (typeof url === 'string')
-            return url.slice(0, 18) + '/public' + url.slice(18);
+        if (typeof url === 'string') {
+            //     return url.slice(0, 18) + '/public' + url.slice(18);
+
+            if (url.includes('http')) return url;
+            else {
+                return `https://kunnec.com/public/user-dash/images/users/profiles/${url}`;
+            }
+        }
     },
 
     recudeFileName: (str) => {
