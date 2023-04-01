@@ -1,6 +1,5 @@
-import React, { useEffect, useLayoutEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { Store } from 'react-notifications-component';
-import { FaCcPaypal, FaCcStripe } from "react-icons/fa";
 
 import { IHost, IPc, IRecorder, ISetting, IToggle, IUser } from '../../type/index.js';
 
@@ -12,8 +11,8 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-// const ENDPOINT = 'https://record.kunnec.com/stream';
-const ENDPOINT = "http://localhost:3001/stream";
+const ENDPOINT = 'https://record.kunnec.com/stream';
+// const ENDPOINT = "http://localhost:3001/stream";
 
 const socket = socketIOClient(ENDPOINT);
 
@@ -36,7 +35,9 @@ let guestUsers = [] as IPc[];
 
 const Home = () => {
     const [sId, setSId] = useState('');
+    const [time, setTime] = useState<number>(0);
     const [panel, setPanel] = useState(false);
+    const [isHost, setIsHost] = useState(false);
     const [shared, setShared] = useState(0);
     const [showModal, setShowModal] = useState(false);
 
@@ -56,6 +57,8 @@ const Home = () => {
         audio: true,
         video: true
     });
+
+    const timeInterval = useRef<any>(null);
 
     const room = window.location.hash.split('#')[1];
     const recorderId = room.split('-')[2];
@@ -128,71 +131,90 @@ const Home = () => {
         setSetting(_setting);
     }
 
+    // const startTimeTrack = () => {
+    //     timeInterval.current = setInterval(() => {
+    //         setTime(prev => prev + 1);
+    //     }, 1000);
+    // }
+
+    // const stopTimeTrack = () => {
+    //     clearInterval(timeInterval.current);
+    // }
+
+
     const getUserAuth = async () => {
-        // const res = await fetch('https://kunnec.com/api/get-recorder', {
-        const res = await fetch('http://localhost/api/get-recorder', {
-            mode: 'cors',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                recorderId: recorderId
-            })
-        });
-
-        const json = await res.json();
-        console.log('res = ', json);
-
-        if (json.status === 'fail') {
-            Store.addNotification({
-                message: json.message,
-                type: 'danger',
-                insert: 'top',
-                container: 'top-right',
-                animationIn: ['animate__animated', 'animate__fadeIn'],
-                animationOut: ['animate__animated', 'animate__fadeOut'],
-                dismiss: {
-                    duration: 2000,
-                    onScreen: true
-                }
+        try {
+            // const res = await fetch('https://kunnec.com/api/get-recorder', {
+            const res = await fetch('http://localhost/api/get-recorder', {
+                mode: 'cors',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    recorderId: recorderId
+                })
             });
 
-            window.setTimeout(() => {
-                window.location.href = 'http://localhost/dashboard';
-                // window.location.href = 'https://kunnec.com/dashboard';
-            }, 2000)
-        }
-        else {
-            const _host = {
-                id: json.host.id,
-                username: json.host.username,
-                image: json.host.image
+            const json = await res.json();
+            console.log('res = ', json);
+
+            if (json.status === 'fail') {
+                Store.addNotification({
+                    message: json.message,
+                    type: 'danger',
+                    insert: 'top',
+                    container: 'top-right',
+                    animationIn: ['animate__animated', 'animate__fadeIn'],
+                    animationOut: ['animate__animated', 'animate__fadeOut'],
+                    dismiss: {
+                        duration: 2000,
+                        onScreen: true
+                    }
+                });
+
+                window.setTimeout(() => {
+                    window.location.href = 'http://localhost/dashboard';
+                    // window.location.href = 'https://kunnec.com/dashboard';
+                }, 2000)
             }
+            else {
+                const _host = {
+                    id: json.host.id,
+                    username: json.host.username,
+                    image: json.host.image
+                }
 
-            const _auth = {
-                id: json.authorization['id'],
-                first_name: json.authorization['first_name'],
-                last_name: json.authorization['last_name'],
-                username: json.authorization['username'],
-                gender: json.authorization['gender'],
-                image: json.authorization['image'],
-            };
+                const _auth = {
+                    id: json.authorization['id'],
+                    first_name: json.authorization['first_name'],
+                    last_name: json.authorization['last_name'],
+                    username: json.authorization['username'],
+                    gender: json.authorization['gender'],
+                    image: json.authorization['image'],
+                };
 
-            const _recorder = {
-                id: recorderId,
-                fee: json.recorder.fee,
-                feeType: json.recorder.fee_type
+                const _recorder = {
+                    id: recorderId,
+                    fee: json.recorder.fee,
+                    feeType: json.recorder.fee_type
+                }
+
+                if (_host.id !== _auth.id) {
+                    setShowModal(true);
+                }
+
+                setHost(_host);
+                setRecorder(_recorder);
+
+                return {
+                    _auth,
+                    _host,
+                    _recorder,
+                };
             }
-
-            // if (_host.id !== _auth.id) {
-            setShowModal(true);
-            // }
-
-            setHost(_host);
-            setRecorder(_recorder);
-
-            return _auth;
+        } catch (err) {
+            console.error('get user auth = ', err);
         }
     }
 
@@ -253,20 +275,26 @@ const Home = () => {
     }
 
     const paypalPay = async () => {
-        // const res = await fetch({
-        //     method: "POST",
-        //     url: "http://localhost:3001/buy-with-paypal",
-        //     // url: "https://kunnec.com/buy-with-paypal",
-        //     params: {
-        //         user: state.user.id
-        //     }
-        // }).then(res => {
+        try {
+            // const res = await fetch('https://record.kunnec.com/pay-with-paypal', {
+            const res = await fetch('http://localhost:3001/pay-with-paypal', {
+                method: "POST",
+                headers: { 'Content-type': 'application/json' },
+                body: JSON.stringify({
+                    roomId: room,
+                    recorderId: recorderId,
+                    guestId: myPc?.id,
+                    clientId: sId
+                })
+            })
 
-        // })
-    }
+            const resData = await res.json();
+            console.log(resData);
 
-    const stripePay = () => {
-
+            window.open(resData.url, '_blank');
+        } catch (err) {
+            console.error('paypal payment = ', err);
+        }
     }
 
     const initNewUser = async (createOffer: boolean, isScreen: boolean, stream: MediaStream | null, id: string, partnerName: string, cb: Function) => {
@@ -373,14 +401,19 @@ const Home = () => {
                 const myId = socket.io.engine.id as string;
                 console.log('socket Id = ', myId);
 
-                const _myPc = await getUserAuth();
+                const authData = await getUserAuth();
+                const _myPc = authData?._auth;
 
                 setSId(myId);
                 if (_myPc) setMyPc({ ..._myPc, clientId: myId });
 
+                const isHost = (authData?._auth.id === authData?._host.id);
+
                 socket.emit('subscribe', {
                     room: room,
                     socketId: myId,
+                    isHost: isHost,
+                    recorder: authData?._recorder,
                     userData: { ..._myPc, clientId: myId },
                 });
             });
@@ -519,7 +552,39 @@ const Home = () => {
 
                 guestUsers = _data;
                 setGuestPC(guestUsers);
+                setTime(0);
+
+                if (data.isHost) {
+                    Store.addNotification({
+                        message: `The recorder finished`,
+                        type: 'danger',
+                        insert: 'top',
+                        container: 'top-right',
+                        animationIn: ['animate__animated', 'animate__fadeIn'],
+                        animationOut: ['animate__animated', 'animate__fadeOut'],
+                        dismiss: {
+                            duration: 2000,
+                            onScreen: true
+                        }
+                    });
+
+                    window.setTimeout(() => {
+                        window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}`;
+                    }, 2000)
+                }
             });
+
+            socket.on('paypal-received', (data: any) => {
+                if (data.message === 'success') {
+                    setShowModal(false);
+                    // startTimeTrack();
+                }
+            });
+
+            socket.on('timeTrack', (data: any) => {
+                setTime(data.time);
+            })
+
         } catch (error) {
             console.error('Socket connect error = ', error);
         }
@@ -539,7 +604,7 @@ const Home = () => {
 
     return (
         <>
-            <Navbar  {...{ host: host, myPc: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: string, type: string) => changeSetting(index, type)} />
+            <Navbar  {...{ time: time, host: host, myPc: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: string, type: string) => changeSetting(index, type)} />
             <main className="home">
                 <div className="main">
                     <div className="main-board">
@@ -560,7 +625,7 @@ const Home = () => {
                         {/* <h1>Please make payment to continue.</h1> */}
                         <div className="payment-group">
                             <button className="" onClick={paypalPay}><img src="image/paypal.png" alt="paypal" /></button>
-                            <button className="" onClick={stripePay}><img src="image/stripe.png" alt="stripe" /></button>
+                            {/* <button className="" onClick={stripePay}><img src="image/stripe.png" alt="stripe" /></button> */}
                             <button className="exit-btn" onClick={() => { window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}` }}>Exit Session</button>
                         </div>
                     </div>

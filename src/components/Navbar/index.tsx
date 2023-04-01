@@ -31,17 +31,18 @@ type onSettingFunction = (index: string, type: string) => void;
 type screenSharingFunction = () => void;
 
 interface IProps {
+    time: number;
+    host: IHost | null;
+    myPc: IPc | null;
+    socket: any;
+    partner: IPc[];
     onToggle: toggleFunction;
     screenSharing: screenSharingFunction;
     onSetting: onSettingFunction;
-    host: IHost | null;
-    myPc: IPc | null;
-    partner: IPc[];
-    socket: any;
 }
 
 const Navbar = (props: IProps) => {
-    const [time, setTime] = useState<number>(0);
+
     const [badge, setBadge] = useState<boolean>(false);
     const [chatText, setChatText] = useState<string>('');
     const [fileName, setFileName] = useState<string>('');
@@ -258,19 +259,14 @@ const Navbar = (props: IProps) => {
         //     chatRef.current?.removeEventListener('dragleave', () => { });
         // }
 
-        const timeInterval = setInterval(() => {
-            setTime(prev => prev + 1);
-        }, 1000);
-
         return () => {
-            clearInterval(timeInterval);
-            chatRef.current?.removeEventListener('keyup', () => { });
+            // chatRef.current?.removeEventListener('keyup', () => { });
         }
     }, []);
 
     useEffect(() => {
         setTimeout(() => {
-            scrollToBottom()
+            scrollToBottom();
         }, 100);
 
         props.socket.on('receiveChat', (data: any) => {
@@ -282,6 +278,7 @@ const Navbar = (props: IProps) => {
             props.socket.off('receiveChat');
         }
     }, [chatList])
+
     return (
         <>
             <nav>
@@ -289,10 +286,10 @@ const Navbar = (props: IProps) => {
                 <div>
                     <div className="x-code">
                         <div>
-                            <img src={props.host?.image} alt="user" />
+                            <img src={Utills.urlString(props.host?.image)} alt="user" />
                             <span className="spot-name">{props.host?.username} session</span>
                         </div>
-                        <p>{Utills.convertTrackingTime(time)}</p>
+                        <p>{Utills.convertTrackingTime(props.time)}</p>
                     </div>
                     <div className="x-btn x-controller">
                         <span onClick={() => changeActive('chat')}>
@@ -360,7 +357,7 @@ const Navbar = (props: IProps) => {
                     <div className="modal-footer">
                         <h1>Do you want to exit this session?</h1>
                         <div className="btn-group">
-                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/k_screen/recording/record_details'}>Yes</button>
+                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/kunnec-record/home'}>Yes</button>
                             <button onClick={() => changeActive('exit')}>No</button>
                         </div>
                     </div>
