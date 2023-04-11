@@ -17,14 +17,15 @@ import {
 import { BiSend } from 'react-icons/bi';
 import { ImAttachment } from 'react-icons/im';
 
+import { IPc, IActive, IMessage, IHost, IRecorder } from '../../type';
+
 import Utills from '../../lib/utills.js';
 
-import { IPc, IActive, IMessage, IHost } from '../../type';
+import { MAIN_URL, SERVER_URL } from '../../config/index.ts';
 
 import { ChatElement } from '../ChatElement';
 
 import './index.scss';
-
 
 type toggleFunction = (type: string) => void;
 type onSettingFunction = (index: string, type: string) => void;
@@ -36,13 +37,14 @@ interface IProps {
     myPc: IPc | null;
     socket: any;
     partner: IPc[];
+    amount: number;
+    recorder: IRecorder | null;
     onToggle: toggleFunction;
     screenSharing: screenSharingFunction;
     onSetting: onSettingFunction;
 }
 
 const Navbar = (props: IProps) => {
-
     const [badge, setBadge] = useState<boolean>(false);
     const [chatText, setChatText] = useState<string>('');
     const [fileName, setFileName] = useState<string>('');
@@ -80,10 +82,6 @@ const Navbar = (props: IProps) => {
             setBadge(false);
         }
     }
-
-    // const recording = () => {
-
-    // }
 
     const getDevices = async () => {
         const devices = await navigator.mediaDevices.enumerateDevices();
@@ -140,7 +138,7 @@ const Navbar = (props: IProps) => {
 
                     try {
                         setUploading(true);
-                        const res = await fetch('https://record.kunnec.com/upload', {
+                        const res = await fetch(`${SERVER_URL}/upload`, {
                             method: 'POST',
                             body: formData
                         })
@@ -243,25 +241,6 @@ const Navbar = (props: IProps) => {
 
     useEffect(() => {
         getDevices();
-
-        // chatRef.current?.addEventListener('dragover', (event) => {
-        //     if (chatRef.current)
-        //         chatRef.current.style.border = '1px solid white';
-        // })
-
-        // chatRef.current?.addEventListener('dragleave', (event) => {
-        //     if (chatRef.current)
-        //         chatRef.current.style.border = 'none';
-        // })
-
-        // return () => {
-        //     chatRef.current?.removeEventListener('dragover', () => { });
-        //     chatRef.current?.removeEventListener('dragleave', () => { });
-        // }
-
-        return () => {
-            // chatRef.current?.removeEventListener('keyup', () => { });
-        }
     }, []);
 
     useEffect(() => {
@@ -356,9 +335,34 @@ const Navbar = (props: IProps) => {
                 <div className="modal-content">
                     <div className="modal-footer">
                         <h1>Do you want to exit this session?</h1>
+                        <div className="info-body">
+                            <div className="info-row">
+                                <span>Host : </span>
+                                <span>{props.host?.username}</span>
+                            </div>
+                            <div className="info-row">
+                                <span>Fee type : </span>
+                                <span>{props.recorder?.feeType === '1' ? 'hourly' : 'flat'}</span>
+                            </div>
+                            <div className="info-row">
+                                <span>Fee : </span>
+                                <span>{props.recorder?.fee}</span>
+                            </div>
+                            {
+                                props.host?.id !== props.myPc?.id &&
+                                <div className="info-row">
+                                    <span>Paid amount : </span>
+                                    <span>{props.amount}</span>
+                                </div>
+                            }
+                            <div className="info-row">
+                                <span>Time : </span>
+                                <span>{Utills.convertTrackingTime(props.time)}</span>
+                            </div>
+                        </div>
                         <div className="btn-group">
-                            <button className="active" onClick={() => window.location.href = 'https://kunnec.com/kunnec-record/home'}>Yes</button>
-                            <button onClick={() => changeActive('exit')}>No</button>
+                            <button onClick={() => window.location.href = `${MAIN_URL}/kunnec-record/details/${props.recorder?.id}`}>Yes</button>
+                            <button className="no-btn" onClick={() => changeActive('exit')}>No</button>
                         </div>
                     </div>
                 </div>

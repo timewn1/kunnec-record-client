@@ -1,9 +1,11 @@
 import React, { useEffect, useLayoutEffect, useState, useRef } from 'react';
 import { Store } from 'react-notifications-component';
 
-import { IHost, IPc, IRecorder, ISetting, IToggle, IUser } from '../../type/index.js';
+import { IHost, IPc, IRecorder, ISetting, IToggle } from '../../type/index.js';
 
 import h from '../../lib/helpers.js';
+
+import { MAIN_URL, SERVER_URL } from '../../config/index.ts';
 
 import Video from '../../components/Video';
 import Navbar from '../../components/Navbar';
@@ -11,8 +13,8 @@ import Navbar from '../../components/Navbar';
 import './index.scss';
 
 const socketIOClient = require('socket.io-client');
-const ENDPOINT = 'https://record.kunnec.com/stream';
-// const ENDPOINT = "http://localhost:3001/stream";
+
+const ENDPOINT = `${SERVER_URL}/stream`;
 
 const socket = socketIOClient(ENDPOINT);
 
@@ -35,11 +37,13 @@ let guestUsers = [] as IPc[];
 
 const Home = () => {
     const [sId, setSId] = useState('');
-    const [time, setTime] = useState<number>(0);
+    const [time, setTime] = useState(0);
     const [panel, setPanel] = useState(false);
-    const [isHost, setIsHost] = useState(false);
+    const [amount, setAmount] = useState(0);
     const [shared, setShared] = useState(0);
+    const [limitTime, setLimitTime] = useState(60);
     const [showModal, setShowModal] = useState(false);
+    const [modalMessage, setModalMessage] = useState('');
 
     const [host, setHost] = useState<IHost | null>(null);
     const [myPc, setMyPc] = useState<IPc | null>(null);
@@ -131,21 +135,26 @@ const Home = () => {
         setSetting(_setting);
     }
 
-    // const startTimeTrack = () => {
-    //     timeInterval.current = setInterval(() => {
-    //         setTime(prev => prev + 1);
-    //     }, 1000);
-    // }
+    const startTimeTrack = () => {
+        timeInterval.current = setInterval(() => {
+            setLimitTime((prev) => {
+                if (prev <= 1) {
+                    window.location.href = `${MAIN_URL}/kunnec-record/details/${recorderId}`;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }
 
-    // const stopTimeTrack = () => {
-    //     clearInterval(timeInterval.current);
-    // }
-
+    const stopTimeTrack = () => {
+        setLimitTime(60);
+        clearInterval(timeInterval.current);
+        timeInterval.current = null;
+    }
 
     const getUserAuth = async () => {
         try {
-            // const res = await fetch('https://kunnec.com/api/get-recorder', {
-            const res = await fetch('http://localhost/api/get-recorder', {
+            const res = await fetch(`${MAIN_URL}/api/get-recorder`, {
                 mode: 'cors',
                 method: 'POST',
                 headers: {
@@ -174,8 +183,7 @@ const Home = () => {
                 });
 
                 window.setTimeout(() => {
-                    window.location.href = 'http://localhost/dashboard';
-                    // window.location.href = 'https://kunnec.com/dashboard';
+                    window.location.href = `${MAIN_URL}/dashboard`;
                 }, 2000)
             }
             else {
@@ -201,6 +209,7 @@ const Home = () => {
                 }
 
                 if (_host.id !== _auth.id) {
+                    setModalMessage('Pay to start screen');
                     setShowModal(true);
                 }
 
@@ -276,8 +285,7 @@ const Home = () => {
 
     const paypalPay = async () => {
         try {
-            // const res = await fetch('https://record.kunnec.com/pay-with-paypal', {
-            const res = await fetch('http://localhost:3001/pay-with-paypal', {
+            const res = await fetch(`${SERVER_URL}/pay-with-paypal`, {
                 method: "POST",
                 headers: { 'Content-type': 'application/json' },
                 body: JSON.stringify({
@@ -569,7 +577,7 @@ const Home = () => {
                     });
 
                     window.setTimeout(() => {
-                        window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}`;
+                        window.location.href = `${MAIN_URL}/kunnec-record/details/${recorderId}`;
                     }, 2000)
                 }
             });
@@ -577,12 +585,23 @@ const Home = () => {
             socket.on('paypal-received', (data: any) => {
                 if (data.message === 'success') {
                     setShowModal(false);
-                    // startTimeTrack();
+                    setAmount(prev => prev + Number(data.amount));
+
+                    if (timeInterval.current) {
+                        stopTimeTrack();
+                        setLimitTime(60);
+                    }
                 }
             });
 
             socket.on('timeTrack', (data: any) => {
                 setTime(data.time);
+            });
+
+            socket.on('timeLimited', (data: any) => {
+                setModalMessage('Pay to continue screen');
+                setShowModal(true);
+                startTimeTrack();
             })
 
         } catch (error) {
@@ -593,18 +612,21 @@ const Home = () => {
             socket.off('connect');
             socket.off('disconnect');
             socket.off('sdp');
-            socket.off('ice candidates');
-            socket.off('screenShareStart');
-            socket.off('screenShareReady');
-            socket.off('newUserStart');
             socket.off('room');
+            socket.off('newUserStart');
+            socket.off('ice candidates');
+            socket.off('screenShareReady');
+            socket.off('screenShareStart');
             socket.off('disconnect room');
+            socket.off('paypal-received');
+            socket.off('timeTrack');
+            socket.off('timeLimited');
         };
     }, [myPc, guestPC.length, screenStream, shared]);
 
     return (
         <>
-            <Navbar  {...{ time: time, host: host, myPc: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: string, type: string) => changeSetting(index, type)} />
+            <Navbar  {...{ time: time, amount: amount, recorder: recorder, host: host, myPc: myPc, partner: guestPC, socket: socket }} onToggle={(key: string) => toggleAction(key)} screenSharing={() => screenSharingStart()} onSetting={(index: string, type: string) => changeSetting(index, type)} />
             <main className="home">
                 <div className="main">
                     <div className="main-board">
@@ -622,11 +644,12 @@ const Home = () => {
                 <div className="overlay"></div>
                 <div className="modal-content">
                     <div className="modal-footer">
-                        {/* <h1>Please make payment to continue.</h1> */}
+                        <h1 style={{ marginBottom: '-0.5em', textAlign: 'center' }}>{modalMessage}</h1>
+                        <h2 style={{ color: 'red' }}>{limitTime !== 60 && limitTime}</h2>
                         <div className="payment-group">
                             <button className="" onClick={paypalPay}><img src="image/paypal.png" alt="paypal" /></button>
                             {/* <button className="" onClick={stripePay}><img src="image/stripe.png" alt="stripe" /></button> */}
-                            <button className="exit-btn" onClick={() => { window.location.href = `https://kunnec.com/kunnec-record/details/${recorderId}` }}>Exit Session</button>
+                            <button className="exit-btn" onClick={() => { window.location.href = `${MAIN_URL}/kunnec-record/details/${recorderId}` }}>Exit Session</button>
                         </div>
                     </div>
                 </div>

@@ -1,3 +1,5 @@
+import { MAIN_URL } from "../config";
+
 export default {
     convertTime: (d) => {
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -12,7 +14,7 @@ export default {
 
             if (url.includes('http')) return url;
             else {
-                return `https://kunnec.com/public/user-dash/images/users/profiles/${url}`;
+                return `${MAIN_URL}/public/user-dash/images/users/profiles/${url}`;
             }
         }
     },

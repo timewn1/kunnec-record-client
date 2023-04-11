@@ -1,9 +1,11 @@
 import React from "react";
 import { BsFillFileEarmarkCheckFill, BsDownload } from "react-icons/bs";
 
+import { IMessage } from "../../type";
+
 import Utills from '../../lib/utills.js';
 
-import { IMessage } from "../../type";
+import { SERVER_URL } from "../../config/index.ts";
 
 import './index.scss';
 
@@ -23,7 +25,7 @@ export const ChatElement = (props: IProps) => {
                     <>
                         <BsFillFileEarmarkCheckFill />
                         {Utills.recudeFileName(props.data.content)}
-                        <a target='_blank' href={`https://record.kunnec.com/download?uploaded=${props.data.uploadedName}&name=${props.data.content}`} download>
+                        <a target='_blank' href={`${SERVER_URL}/download?uploaded=${props.data.uploadedName}&name=${props.data.content}`} download>
                             <BsDownload />
                         </a>
                     </> :
