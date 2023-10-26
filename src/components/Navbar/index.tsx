@@ -325,9 +325,9 @@ const Navbar = (props: IProps) => {
                                     </span>
                             }
                         </div>
-                        <span className="chat-send-btn" onClick={() => sendMessage()}><BiSend /></span>
+                        <span className="chat-send-btn" onClick={sendMessage}><BiSend /></span>
                         <span onClick={() => { fileRef.current?.click(); }}><ImAttachment /></span>
-                        <input type="file" ref={fileRef} onChange={() => uploadFile()} />
+                        <input type="file" ref={fileRef} onChange={uploadFile} />
                     </div>
                 </div>
             </div>
